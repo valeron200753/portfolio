@@ -1,0 +1,50 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: #fff;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 20px 10%;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    margin-left: 20px;
+}
+
+section {
+    min-height: 60vh;
+    padding: 80px 10%;
+}
+
+#hero {
+    min-height: 80vh;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#hero h1 {
+    font-size: 60px;
+    margin-bottom: 10px;
+}
+
+button {
+    width: 150px;
+    padding: 12px;
+
+    border: none;
+    cursor: pointer;
+}

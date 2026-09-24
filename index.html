@@ -27,11 +27,9 @@
     <main>
 
         <section id="hero">
-            <h1>Hi, I'm Tokyo</h1>
+            <h1 id="heroTitle">Hi, I'm Tokyo</h1>
 
-            <p>
-                Junior Full-Stack Developer
-            </p>
+            <p>Junior Full-Stack Developer</p>
 
             <button id="contactButton">
                 Contact me
@@ -62,17 +60,36 @@
         <section id="projects">
             <h2>Projects</h2>
 
-            <p>In the future, projects I've written will be posted here soon. See you then. </p>
+            <div id="projectList"></div>
         </section>
 
         <section id="contact">
             <h2>Contact</h2>
 
-            <p>Email: your-email@example.com</p>
+            <form id="contactForm">
+                <input
+                    id="nameInput"
+                    type="text"
+                    placeholder="Your name"
+                >
+
+                <input
+                    id="emailInput"
+                    type="email"
+                    placeholder="Your email"
+                >
+
+                <button type="submit">
+                    Send
+                </button>
+            </form>
+
+            <p id="formMessage"></p>
         </section>
 
     </main>
 
     <script src="script.js"></script>
+
 </body>
 </html>

@@ -13,7 +13,6 @@ nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
-
     padding: 20px 10%;
 }
 
@@ -30,7 +29,6 @@ section {
 
 #hero {
     min-height: 80vh;
-
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -44,10 +42,10 @@ section {
 button {
     width: 150px;
     padding: 12px;
-
     border: none;
     cursor: pointer;
 }
+
 #projectList {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -60,4 +58,22 @@ button {
     border: 1px solid #333;
     border-radius: 12px;
     background: #181818;
+}
+
+#githubProfile {
+    margin-top: 30px;
+}
+
+#githubProfile img {
+    display: block;
+    margin-bottom: 15px;
+    border-radius: 50%;
+}
+
+#githubProfile h3 {
+    margin-bottom: 10px;
+}
+
+#githubProfile a {
+    color: white;
 }

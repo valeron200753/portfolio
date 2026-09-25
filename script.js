@@ -85,3 +85,52 @@ contactForm.addEventListener("submit", function (event) {
     nameInput.value = "";
     emailInput.value = "";
 });
+
+
+
+
+
+async function loadGitHubProfile() {
+    const githubProfile = document.querySelector("#githubProfile");
+
+    try {
+        const response = await fetch(
+            "https://api.github.com/users/valeron200753"
+        );
+
+        if (!response.ok) {
+            throw new Error("GitHub request failed");
+        }
+
+        const user = await response.json();
+
+        githubProfile.innerHTML = `
+    <img
+        src="${user.avatar_url}"
+        alt="${user.login}"
+        width="120"
+    >
+
+    <h3>${user.login}</h3>
+
+    <p>Public repositories: ${user.public_repos}</p>
+
+    <p>Followers: ${user.followers}</p>
+
+    <p>Following: ${user.following}</p>
+
+    <a
+        href="${user.html_url}"
+        target="_blank"
+        rel="noopener noreferrer"
+    >
+        View GitHub
+    </a>
+`;
+
+    } catch (error) {
+        githubProfile.textContent = "Could not load GitHub profile.";
+    }
+}
+
+loadGitHubProfile();

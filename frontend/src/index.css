@@ -24,3 +24,12 @@ button,
 input {
     font: inherit;
 }
+nav a {
+    margin-right: 16px;
+    text-decoration: none;
+}
+
+nav a.active {
+    font-weight: bold;
+    text-decoration: underline;
+}

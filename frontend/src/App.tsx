@@ -1,38 +1,21 @@
+import { Routes, Route } from "react-router-dom";
+import Home from "./pages/Home";
+import ProjectsPage from "./pages/ProjectsPage";
+import ContactPage from "./pages/ContactPage";
 import Header from "./components/Header";
-import Hero from "./components/Hero";
-import About from "./components/About";
-import Skills from "./components/Skills";
-import Projects from "./components/Projects";
-import Contact from "./components/Contact";
-import Counter from "./components/Counter"
-import GitHubProfile from "./components/GitHubProfile";
+import NotFound from "./pages/NotFound";
 
 function App() {
     return (
         <>
             <Header />
 
-            <main>
-                <Hero
-                    name="Tokyo"
-                    role="Junior Full-Stack Developer"
-                    description="I build web applications and learn modern full-stack development."
-                />
-
-                <About
-                    information="I'm learning full-stack development and building web applications with React, TypeScript and Node.js."
-                />
-
-                <Skills />
-
-                <Projects />
-                <GitHubProfile />
-                <Contact
-                    email="tokyo@example.com"
-                    githubUrl="https://github.com/valeron200753"
-                />
-                <Counter />
-            </main>
+            <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/projects" element={<ProjectsPage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="*" element={<NotFound />} />
+            </Routes>
         </>
     );
 }

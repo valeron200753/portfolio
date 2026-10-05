@@ -1,9 +1,11 @@
 import { NavLink } from "react-router-dom";
-
+import ThemeToggle from "./ThemeToggle";
 function Header() {
+   
     return (
         <header>
             <nav>
+                <ThemeToggle />
                 <NavLink
                     to="/"
                     className={({ isActive }) => isActive ? "active" : ""}

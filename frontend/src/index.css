@@ -33,3 +33,24 @@ nav a.active {
     font-weight: bold;
     text-decoration: underline;
 }
+
+.light {
+    min-height: 100vh;
+    background: #ffffff;
+    color: #111111;
+}
+
+.dark {
+    min-height: 100vh;
+    background: #111111;
+    color: #ffffff;
+}
+
+
+.light a {
+    color: #111111;
+}
+
+.dark a {
+    color: #ffffff;
+}

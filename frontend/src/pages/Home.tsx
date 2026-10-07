@@ -2,6 +2,7 @@ import Hero from "../components/Hero";
 import About from "../components/About";
 import Skills from "../components/Skills";
 import GitHubProfile from "../components/GitHubProfile";
+import ReducerCounter from "../components/ReducerCounter";
 
 function Home() {
     return (
@@ -19,6 +20,8 @@ function Home() {
             <Skills />
 
             <GitHubProfile />
+
+            <ReducerCounter />
         </main>
     );
 }

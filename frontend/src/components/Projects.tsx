@@ -1,6 +1,8 @@
 
 import { Link, useSearchParams } from "react-router-dom";
 import { projects } from "../data/projects";
+import { useCallback, useMemo } from "react";
+
 function Projects() {
     const [searchParams, setSearchParams] = useSearchParams();
 
@@ -9,39 +11,48 @@ function Projects() {
     const search = searchParams.get("search") ?? "";
 
 
-    function toggleCompletedProjects() {
-        if (status === "completed") {
-            setSearchParams({});
+    const toggleCompletedProjects = useCallback(() => {
+    setSearchParams((currentParams) => {
+        const newParams = new URLSearchParams(currentParams);
+
+        if (newParams.get("status") === "completed") {
+            newParams.delete("status");
         } else {
-            setSearchParams({ status: "completed" });
+            newParams.set("status", "completed");
         }
-    }
+
+        return newParams;
+    });
+}, [setSearchParams]);
 
 
 
 
-    const visibleProjects = projects.filter((project) => {
-        const matchesStatus =
-            status === "completed"
-                ? project.completed
-                : true;
+    const visibleProjects = useMemo(() => {
+        console.log("Filtering projects...");
 
-        const matchesTechnology =
-            technology
-                ? project.technology === technology
-                : true;
+        return projects.filter((project) => {
+            const matchesStatus =
+                status === "completed"
+                    ? project.completed
+                    : true;
 
-        const matchesSearch =
-            project.title
+            const matchesTechnology =
+                technology
+                    ? project.technology === technology
+                    : true;
+
+            const matchesSearch = project.title
                 .toLowerCase()
                 .includes(search.toLowerCase());
 
-        return (
-            matchesStatus &&
-            matchesTechnology &&
-            matchesSearch
-        );
-    });
+            return (
+                matchesStatus &&
+                matchesTechnology &&
+                matchesSearch
+            );
+        });
+    }, [status, technology, search]);
 
     return (
 

@@ -8,6 +8,7 @@ import ProjectsPage from "./pages/ProjectsPage";
 import ContactPage from "./pages/ContactPage";
 import ProjectDetailsPage from "./pages/ProjectDetailsPage";
 import NotFound from "./pages/NotFound";
+import TaskManagerPage from "./pages/TaskManagerPage";
 
 function App() {
     const { theme } = useContext(ThemeContext);
@@ -21,6 +22,10 @@ function App() {
                 <Route path="/projects" element={<ProjectsPage />} />
                 <Route path="/projects/:id" element={<ProjectDetailsPage />} />
                 <Route path="/contact" element={<ContactPage />} />
+                <Route
+                    path="/tasks"
+                    element={<TaskManagerPage />}
+                />
                 <Route path="*" element={<NotFound />} />
             </Routes>
         </div>

@@ -1,26 +1,36 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import type { Task } from "../types/task";
-import useLocalStorage from "../hooks/useLocalStorage";
+
 function TaskManagerPage() {
     const [newTaskTitle, setNewTaskTitle] = useState("");
-    const [tasks, setTasks] = useLocalStorage<Task[]>("tasks", [
-        {
-            id: 1,
-            title: "Learn React",
-            completed: false
-        },
-        {
-            id: 2,
-            title: "Practice TypeScript",
-            completed: true
-        },
-        {
-            id: 3,
-            title: "Build Task Manager",
-            completed: false
-        }
-    ]);
-    function handleAddTask(event: FormEvent<HTMLFormElement>) {
+    const [tasks, setTasks] = useState<Task[]>([]);
+    useEffect(() => {
+        const controller = new AbortController();
+
+        fetch("/api/tasks", {
+            signal: controller.signal
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                return response.json() as Promise<Task[]>;
+            })
+            .then((data) => {
+                setTasks(data);
+            })
+            .catch((error) => {
+                if (error instanceof Error && error.name !== "AbortError") {
+                    console.error("Failed to load tasks:", error);
+                }
+            });
+
+        return () => controller.abort();
+    }, []);
+    async function handleAddTask(
+        event: FormEvent<HTMLFormElement>
+    ) {
         event.preventDefault();
 
         const title = newTaskTitle.trim();
@@ -29,34 +39,86 @@ function TaskManagerPage() {
             return;
         }
 
-        setTasks((currentTasks) => {
-            const nextId =
-                Math.max(0, ...currentTasks.map(task => task.id)) + 1;
+        try {
+            const response = await fetch("/api/tasks", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ title })
+            });
 
-            const newTask: Task = {
-                id: nextId,
-                title: title,
-                completed: false
-            };
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
 
-            return [...currentTasks, newTask];
-        });
+            const newTask: Task = await response.json();
 
-        setNewTaskTitle("");
+            setTasks((currentTasks) => [
+                ...currentTasks,
+                newTask
+            ]);
+
+            setNewTaskTitle("");
+
+        } catch (error) {
+            console.error("Failed to create task:", error);
+            alert("Could not create task.");
+        }
     }
-    function toggleTask(id: number) {
-        setTasks((currentTasks) =>
-            currentTasks.map((task) =>
-                task.id === id
-                    ? { ...task, completed: !task.completed }
-                    : task
-            )
-        );
+    async function toggleTask(id: number) {
+        const task = tasks.find((task) => task.id === id);
+
+        if (!task) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/tasks/${id}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    completed: !task.completed
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const updatedTask: Task = await response.json();
+
+            setTasks((currentTasks) =>
+                currentTasks.map((task) =>
+                    task.id === id ? updatedTask : task
+                )
+            );
+
+        } catch (error) {
+            console.error("Failed to update task:", error);
+            alert("Could not update task.");
+        }
     }
-    function deleteTask(id: number) {
-        setTasks((currentTasks) =>
-            currentTasks.filter((task) => task.id !== id)
-        );
+    async function deleteTask(id: number) {
+        try {
+            const response = await fetch(`/api/tasks/${id}`, {
+                method: "DELETE"
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            setTasks((currentTasks) =>
+                currentTasks.filter((task) => task.id !== id)
+            );
+
+        } catch (error) {
+            console.error("Failed to delete task:", error);
+            alert("Could not delete task.");
+        }
     }
     const totalTasks = tasks.length;
 

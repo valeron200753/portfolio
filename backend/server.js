@@ -1,30 +1,24 @@
 const express = require("express");
-
+const db = require("./database");
 const app = express();
 app.use(express.json());
 const PORT = 3001;
-const tasks = [
-    {
-        id: 1,
-        title: "Learn Node.js",
-        completed: true
-    },
-    {
-        id: 2,
-        title: "Learn Express",
-        completed: false
-    },
-    {
-        id: 3,
-        title: "Build REST API",
-        completed: false
-    }
-];
+
 app.get("/", (req, res) => {
     res.send("Hello from my first backend!");
 });
 app.get("/api/tasks", (req, res) => {
-    res.json(tasks);
+    const rows = db.prepare(
+        "SELECT * FROM tasks"
+    ).all();
+
+    const databaseTasks = rows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        completed: Boolean(row.completed)
+    }));
+
+    res.json(databaseTasks);
 });
 app.post("/api/tasks", (req, res) => {
     const title = req.body?.title;
@@ -35,20 +29,26 @@ app.post("/api/tasks", (req, res) => {
         });
     }
 
-    const newTask = {
-        id: Math.max(0, ...tasks.map(task => task.id)) + 1,
-        title: title.trim(),
-        completed: false
-    };
+    const result = db.prepare(
+        "INSERT INTO tasks (title, completed) VALUES (?, ?)"
+    ).run(title.trim(), 0);
 
-    tasks.push(newTask);
+    const newTask = db.prepare(
+        "SELECT * FROM tasks WHERE id = ?"
+    ).get(Number(result.lastInsertRowid));
 
-    res.status(201).json(newTask);
+    res.status(201).json({
+        id: newTask.id,
+        title: newTask.title,
+        completed: Boolean(newTask.completed)
+    });
 });
 app.get("/api/tasks/:id", (req, res) => {
     const id = Number(req.params.id);
 
-    const task = tasks.find((task) => task.id === id);
+    const task = db.prepare(
+        "SELECT * FROM tasks WHERE id = ?"
+    ).get(id);
 
     if (!task) {
         return res.status(404).json({
@@ -56,16 +56,18 @@ app.get("/api/tasks/:id", (req, res) => {
         });
     }
 
-    res.json(task);
+    res.json({
+        id: task.id,
+        title: task.title,
+        completed: Boolean(task.completed)
+    });
 });
 app.patch("/api/tasks/:id", (req, res) => {
     const id = Number(req.params.id);
 
-    const task = tasks.find((task) => task.id === id);
-
-    if (!task) {
-        return res.status(404).json({
-            error: "Task not found"
+    if (!Number.isSafeInteger(id) || id <= 0) {
+        return res.status(400).json({
+            error: "Invalid task ID"
         });
     }
 
@@ -77,27 +79,56 @@ app.patch("/api/tasks/:id", (req, res) => {
         });
     }
 
-    task.completed = completed;
+    const result = db.prepare(
+        "UPDATE tasks SET completed = ? WHERE id = ?"
+    ).run(completed ? 1 : 0, id);
 
-    res.json(task);
-});
-app.delete("/api/tasks/:id", (req, res) => {
-    const id = Number(req.params.id);
-
-    const taskIndex = tasks.findIndex(
-        (task) => task.id === id
-    );
-
-    if (taskIndex === -1) {
+    if (result.changes === 0) {
         return res.status(404).json({
             error: "Task not found"
         });
     }
 
-    const deletedTask = tasks.splice(taskIndex, 1)[0];
+    const task = db.prepare(
+        "SELECT * FROM tasks WHERE id = ?"
+    ).get(id);
 
-    res.json(deletedTask);
+    res.json({
+        id: task.id,
+        title: task.title,
+        completed: Boolean(task.completed)
+    });
 });
+app.delete("/api/tasks/:id", (req, res) => {
+    const id = Number(req.params.id);
+
+    if (!Number.isSafeInteger(id) || id <= 0) {
+        return res.status(400).json({
+            error: "Invalid task ID"
+        });
+    }
+
+    const task = db.prepare(
+        "SELECT * FROM tasks WHERE id = ?"
+    ).get(id);
+
+    if (!task) {
+        return res.status(404).json({
+            error: "Task not found"
+        });
+    }
+
+    db.prepare(
+        "DELETE FROM tasks WHERE id = ?"
+    ).run(id);
+
+    res.json({
+        id: task.id,
+        title: task.title,
+        completed: Boolean(task.completed)
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });

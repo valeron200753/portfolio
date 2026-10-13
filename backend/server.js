@@ -1,3 +1,5 @@
+const parseTaskId = require("./utils/parseTaskId");
+const parseTaskTitle = require("./utils/parseTaskTitle");
 const express = require("express");
 const db = require("./database");
 const app = express();
@@ -21,17 +23,17 @@ app.get("/api/tasks", (req, res) => {
     res.json(databaseTasks);
 });
 app.post("/api/tasks", (req, res) => {
-    const title = req.body?.title;
+    const title = parseTaskTitle(req.body?.title);
 
-    if (typeof title !== "string" || title.trim() === "") {
+    if (title === null) {
         return res.status(400).json({
-            error: "Task title is required"
+            error: "Title must contain 1 to 100 characters"
         });
     }
 
     const result = db.prepare(
         "INSERT INTO tasks (title, completed) VALUES (?, ?)"
-    ).run(title.trim(), 0);
+    ).run(title, 0);
 
     const newTask = db.prepare(
         "SELECT * FROM tasks WHERE id = ?"
@@ -44,7 +46,13 @@ app.post("/api/tasks", (req, res) => {
     });
 });
 app.get("/api/tasks/:id", (req, res) => {
-    const id = Number(req.params.id);
+    const id = parseTaskId(req.params.id);
+
+    if (id === null) {
+        return res.status(400).json({
+            error: "Invalid task ID"
+        });
+    }
 
     const task = db.prepare(
         "SELECT * FROM tasks WHERE id = ?"
@@ -63,9 +71,9 @@ app.get("/api/tasks/:id", (req, res) => {
     });
 });
 app.patch("/api/tasks/:id", (req, res) => {
-    const id = Number(req.params.id);
+    const id = parseTaskId(req.params.id);
 
-    if (!Number.isSafeInteger(id) || id <= 0) {
+    if (id === null) {
         return res.status(400).json({
             error: "Invalid task ID"
         });
@@ -100,9 +108,9 @@ app.patch("/api/tasks/:id", (req, res) => {
     });
 });
 app.delete("/api/tasks/:id", (req, res) => {
-    const id = Number(req.params.id);
+    const id = parseTaskId(req.params.id);
 
-    if (!Number.isSafeInteger(id) || id <= 0) {
+    if (id === null) {
         return res.status(400).json({
             error: "Invalid task ID"
         });
@@ -128,7 +136,28 @@ app.delete("/api/tasks/:id", (req, res) => {
         completed: Boolean(task.completed)
     });
 });
+app.use("/api", (req, res) => {
+    res.status(404).json({
+        error: "API route not found"
+    });
+});
+app.use((err, req, res, next) => {
+    if (res.headersSent) {
+        return next(err);
+    }
 
+    if (err.type === "entity.parse.failed") {
+        return res.status(400).json({
+            error: "Invalid JSON"
+        });
+    }
+
+    console.error("Unhandled server error:", err);
+
+    res.status(500).json({
+        error: "Internal server error"
+    });
+});
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });

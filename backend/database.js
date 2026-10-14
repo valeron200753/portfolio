@@ -1,9 +1,10 @@
 const { DatabaseSync } = require("node:sqlite");
 const path = require("node:path");
+const dbPath = process.env.TASKS_DB_PATH ||
+    path.join(__dirname, "tasks.db");
 
-const db = new DatabaseSync(
-    path.join(__dirname, "tasks.db")
-);
+const db = new DatabaseSync(dbPath);
+
 
 db.exec(`
     CREATE TABLE IF NOT EXISTS tasks (

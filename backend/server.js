@@ -4,7 +4,7 @@ const express = require("express");
 const db = require("./database");
 const app = express();
 app.use(express.json());
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 app.get("/", (req, res) => {
     res.send("Hello from my first backend!");
@@ -158,6 +158,10 @@ app.use((err, req, res, next) => {
         error: "Internal server error"
     });
 });
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+    });
+}
+
+module.exports = app;

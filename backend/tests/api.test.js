@@ -114,3 +114,88 @@ test("POST /api/tasks should reject invalid title", async () => {
 
     assert.equal(tasksAfter.length, tasksBefore.length);
 });
+
+test("PATCH /api/tasks/:id should update a task", async () => {
+    const createResponse = await fetch(`${baseURL}/api/tasks`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            title: "Learn PATCH"
+        })
+    });
+
+    assert.equal(createResponse.status, 201);
+
+    const createdTask = await createResponse.json();
+
+    const response = await fetch(
+        `${baseURL}/api/tasks/${createdTask.id}`,
+        {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                completed: true
+            })
+        }
+    );
+
+    assert.equal(response.status, 200);
+
+    const updatedTask = await response.json();
+
+    assert.deepEqual(updatedTask, {
+        ...createdTask,
+        completed: true
+    });
+
+    const getResponse = await fetch(
+        `${baseURL}/api/tasks/${createdTask.id}`
+    );
+
+    assert.equal(getResponse.status, 200);
+    assert.deepEqual(await getResponse.json(), updatedTask);
+});
+
+
+test("DELETE /api/tasks/:id should delete a task", async () => {
+    const createResponse = await fetch(`${baseURL}/api/tasks`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            title: "Task to delete"
+        })
+    });
+
+    assert.equal(createResponse.status, 201);
+
+    const createdTask = await createResponse.json();
+
+    const deleteResponse = await fetch(
+        `${baseURL}/api/tasks/${createdTask.id}`,
+        {
+            method: "DELETE"
+        }
+    );
+
+    assert.equal(deleteResponse.status, 200);
+
+    const deletedTask = await deleteResponse.json();
+
+    assert.deepEqual(deletedTask, createdTask);
+
+    const getResponse = await fetch(
+        `${baseURL}/api/tasks/${createdTask.id}`
+    );
+
+    assert.equal(getResponse.status, 404);
+
+    assert.deepEqual(await getResponse.json(), {
+        error: "Task not found"
+    });
+});

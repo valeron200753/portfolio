@@ -1,6 +1,7 @@
 
 const express = require("express");
 const tasksRouter = require("./routes/tasks.routes");
+const authRouter = require("./routes/auth.routes");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -12,6 +13,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/tasks", tasksRouter);
+app.use("/api/auth", authRouter);
 
 app.use("/api", (req, res) => {
     res.status(404).json({

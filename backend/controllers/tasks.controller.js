@@ -7,7 +7,12 @@ const {
     getTaskById,
     createTask: createTaskService,
     updateTaskCompleted,
-    deleteTaskById
+    deleteTaskById,
+    getTasksForUser,
+    getTaskForUser,
+    createTaskForUser,
+    updateTaskForUser,
+    deleteTaskForUser
 } = require("../services/tasks.service");
 
 function getTasks(req, res) {
@@ -100,6 +105,179 @@ function deleteTask(req, res) {
     res.json(task);
 }
 
+function getMyTasks(req, res, next) {
+    try {
+        const tasks = getTasksForUser(req.user.id);
+
+        return res.status(200).json(tasks);
+    } catch (err) {
+        return next(err);
+    }
+}
+
+
+function getMyTask(req, res, next) {
+    try {
+        const rawId = req.params.id;
+
+        if (!/^[1-9]\d*$/.test(rawId)) {
+            return res.status(400).json({
+                error: "Invalid task ID"
+            });
+        }
+
+        const taskId = Number(rawId);
+
+        if (!Number.isSafeInteger(taskId)) {
+            return res.status(400).json({
+                error: "Invalid task ID"
+            });
+        }
+
+        const task = getTaskForUser(
+            req.user.id,
+            taskId
+        );
+
+        if (task === null) {
+            return res.status(404).json({
+                error: "Task not found"
+            });
+        }
+
+        return res.status(200).json(task);
+    } catch (err) {
+        return next(err);
+    }
+}
+
+
+function createMyTask(req, res, next) {
+    try {
+        const rawTitle = req.body?.title;
+
+        // Використай тут ті самі правила валідації
+        // title, які вже застосовує createTask().
+        const title = parseTaskTitle(rawTitle);
+
+        if (title === null) {
+            return res.status(400).json({
+                error: "Invalid task title"
+            });
+        }
+
+        const task = createTaskForUser(
+            req.user.id,
+            title
+        );
+
+        return res.status(201).json(task);
+    } catch (err) {
+        return next(err);
+    }
+}
+
+
+function updateMyTask(req, res, next) {
+    try {
+        const rawId = req.params.id;
+
+        // Перевіряємо ID завдання
+        if (!/^[1-9]\d*$/.test(rawId)) {
+            return res.status(400).json({
+                error: "Invalid task ID"
+            });
+        }
+
+        const taskId = Number(rawId);
+
+        if (!Number.isSafeInteger(taskId)) {
+            return res.status(400).json({
+                error: "Invalid task ID"
+            });
+        }
+
+        // Перевіряємо значення completed
+        const completed = req.body?.completed;
+
+        if (typeof completed !== "boolean") {
+            return res.status(400).json({
+                error: "Completed must be a boolean"
+            });
+        }
+
+        // Змінюємо завдання лише його власника
+        const task = updateTaskForUser(
+            req.user.id,
+            taskId,
+            completed
+        );
+
+        if (task === null) {
+            return res.status(404).json({
+                error: "Task not found"
+            });
+        }
+
+        return res.status(200).json(task);
+    } catch (err) {
+        return next(err);
+    }
+}
+
+
+function deleteMyTask(req, res, next) {
+    try {
+        const rawId = req.params.id;
+
+        // Перевіряємо правильність ID
+        if (!/^[1-9]\d*$/.test(rawId)) {
+            return res.status(400).json({
+                error: "Invalid task ID"
+            });
+        }
+
+        const taskId = Number(rawId);
+
+        if (!Number.isSafeInteger(taskId)) {
+            return res.status(400).json({
+                error: "Invalid task ID"
+            });
+        }
+
+        // Шукаємо тільки власне завдання
+        const task = getTaskForUser(
+            req.user.id,
+            taskId
+        );
+
+        if (task === null) {
+            return res.status(404).json({
+                error: "Task not found"
+            });
+        }
+
+        // Видаляємо тільки завдання власника
+        const deleted = deleteTaskForUser(
+            req.user.id,
+            taskId
+        );
+
+        if (!deleted) {
+            return res.status(404).json({
+                error: "Task not found"
+            });
+        }
+
+        return res.status(200).json(task);
+    } catch (err) {
+        return next(err);
+    }
+}
+
+
+
+
 
 
 
@@ -108,5 +286,10 @@ module.exports = {
     getTask,
     createTask,
     updateTask,
-    deleteTask
+    deleteTask,
+    getMyTasks,
+    getMyTask,
+    createMyTask,
+    updateMyTask,
+    deleteMyTask
 };

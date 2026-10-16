@@ -75,6 +75,84 @@ function deleteTaskById(id) {
 }
 
 
+function getTasksForUser(userId) {
+    const tasks = db.prepare(`
+        SELECT id, title, completed
+        FROM tasks
+        WHERE user_id = ?
+        ORDER BY id DESC
+    `).all(userId);
+
+    return tasks.map(task => ({
+        ...task,
+        completed: task.completed === 1
+    }));
+}
+
+
+function getTaskForUser(userId, taskId) {
+    const task = db.prepare(`
+        SELECT id, title, completed
+        FROM tasks
+        WHERE id = ? AND user_id = ?
+    `).get(taskId, userId);
+
+    if (!task) {
+        return null;
+    }
+
+    return {
+        ...task,
+        completed: task.completed === 1
+    };
+}
+
+
+function createTaskForUser(userId, title) {
+    const result = db.prepare(`
+        INSERT INTO tasks (title, completed, user_id)
+        VALUES (?, 0, ?)
+    `).run(title, userId);
+
+    return {
+        id: Number(result.lastInsertRowid),
+        title,
+        completed: false
+    };
+}
+
+function updateTaskForUser(userId, taskId, completed) {
+    const result = db.prepare(`
+        UPDATE tasks
+        SET completed = ?
+        WHERE id = ? AND user_id = ?
+    `).run(
+        completed ? 1 : 0,
+        taskId,
+        userId
+    );
+
+    if (result.changes === 0) {
+        return null;
+    }
+
+    return getTaskForUser(userId, taskId);
+}
+
+
+function deleteTaskForUser(userId, taskId) {
+    const result = db.prepare(`
+        DELETE FROM tasks
+        WHERE id = ? AND user_id = ?
+    `).run(taskId, userId);
+
+    return result.changes > 0;
+}
+
+
+
+
+
 
 
 module.exports = {
@@ -82,5 +160,10 @@ module.exports = {
     getTaskById,
     createTask,
     updateTaskCompleted,
-    deleteTaskById
+    deleteTaskById,
+    getTasksForUser,
+    getTaskForUser,
+    createTaskForUser,
+    updateTaskForUser,
+    deleteTaskForUser
 };

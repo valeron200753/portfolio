@@ -17,7 +17,13 @@ function LoginForm({ onSuccess }: LoginFormProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    // Чи сервер відхилив саме облікові дані?
+    const invalidCredentials =
+        error === "Неправильна пошта або пароль";
+
+    async function handleSubmit(
+        event: FormEvent<HTMLFormElement>
+    ) {
         event.preventDefault();
 
         if (loading) return;
@@ -42,7 +48,10 @@ function LoginForm({ onSuccess }: LoginFormProps) {
     }
 
     return (
-        <form onSubmit={handleSubmit}>
+        <form
+            onSubmit={handleSubmit}
+            aria-busy={loading}
+        >
             <h2>Вхід в акаунт</h2>
 
             <div>
@@ -54,11 +63,19 @@ function LoginForm({ onSuccess }: LoginFormProps) {
                     id="login-email"
                     type="email"
                     value={email}
-                    onChange={(event) =>
-                        setEmail(event.target.value)
-                    }
+                    onChange={(event) => {
+                        setEmail(event.target.value);
+                        setError(null);
+                    }}
                     autoComplete="username"
                     placeholder="you@example.com"
+                    aria-invalid={invalidCredentials}
+                    aria-describedby={
+                        invalidCredentials
+                            ? "login-error"
+                            : undefined
+                    }
+                    disabled={loading}
                     required
                 />
             </div>
@@ -72,17 +89,33 @@ function LoginForm({ onSuccess }: LoginFormProps) {
                     id="login-password"
                     type="password"
                     value={password}
-                    onChange={(event) =>
-                        setPassword(event.target.value)
-                    }
+                    onChange={(event) => {
+                        setPassword(event.target.value);
+                        setError(null);
+                    }}
                     autoComplete="current-password"
                     placeholder="Введіть пароль"
+                    aria-invalid={invalidCredentials}
+                    aria-describedby={
+                        invalidCredentials
+                            ? "login-error"
+                            : undefined
+                    }
+                    disabled={loading}
                     required
                 />
             </div>
 
             {error && (
-                <p role="alert">{error}</p>
+                <p id="login-error" role="alert">
+                    {error}
+                </p>
+            )}
+
+            {loading && (
+                <p role="status">
+                    Перевіряємо облікові дані...
+                </p>
             )}
 
             <button

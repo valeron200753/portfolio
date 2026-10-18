@@ -1,6 +1,6 @@
-
 import {
     useEffect,
+    useRef,
     useState,
     type FormEvent
 } from "react";
@@ -19,12 +19,16 @@ type TaskManagerPageProps = {
     onUnauthorized: () => void;
 };
 
+type TaskAction = "toggle" | "delete";
+
 function TaskManagerPage({
     onUnauthorized
 }: TaskManagerPageProps) {
     const [tasks, setTasks] = useState<Task[]>([]);
 
     const [newTaskTitle, setNewTaskTitle] = useState("");
+
+    const [retryCount, setRetryCount] = useState(0);
 
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
@@ -34,6 +38,11 @@ function TaskManagerPage({
     const [adding, setAdding] = useState(false);
     const [busyTaskId, setBusyTaskId] = useState<number | null>(null);
 
+    const [busyTaskAction, setBusyTaskAction] =
+        useState<TaskAction | null>(null);
+    const addRequestInFlight = useRef(false);
+
+    const taskRequestInFlight = useRef(false);
     // ==============================
     // Завантаження завдань
     // ==============================
@@ -64,8 +73,11 @@ function TaskManagerPage({
                 }
 
                 setTasks([]);
+
                 setLoadError(
-                    "Не вдалося завантажити завдання."
+                    error instanceof Error
+                        ? error.message
+                        : "Не вдалося завантажити завдання."
                 );
             } finally {
                 if (!controller.signal.aborted) {
@@ -79,7 +91,7 @@ function TaskManagerPage({
         return () => {
             controller.abort();
         };
-    }, [onUnauthorized]);
+    }, [onUnauthorized, retryCount]);
 
     // ==============================
     // Обробка помилок дій
@@ -105,6 +117,7 @@ function TaskManagerPage({
     // Створення завдання
     // ==============================
 
+
     async function handleAddTask(
         event: FormEvent<HTMLFormElement>
     ) {
@@ -114,12 +127,16 @@ function TaskManagerPage({
 
         if (
             title === "" ||
+            addRequestInFlight.current ||
             adding ||
             loading ||
             loadError !== null
         ) {
             return;
         }
+
+        // Блокуємо повторний запуск негайно
+        addRequestInFlight.current = true;
 
         setAdding(true);
         setActionError(null);
@@ -139,16 +156,25 @@ function TaskManagerPage({
                 "Не вдалося створити завдання"
             );
         } finally {
+            // Розблоковуємо навіть після помилки
+            addRequestInFlight.current = false;
             setAdding(false);
         }
     }
+
 
     // ==============================
     // Зміна статусу завдання
     // ==============================
 
+
     async function toggleTask(id: number) {
-        if (busyTaskId !== null) {
+        // Не запускаємо другу операцію,
+        // поки перша ще виконується
+        if (
+            taskRequestInFlight.current ||
+            busyTaskId !== null
+        ) {
             return;
         }
 
@@ -160,7 +186,11 @@ function TaskManagerPage({
             return;
         }
 
+        // Синхронно блокуємо повторний запуск
+        taskRequestInFlight.current = true;
+
         setBusyTaskId(id);
+        setBusyTaskAction("toggle");
         setActionError(null);
 
         try {
@@ -182,20 +212,31 @@ function TaskManagerPage({
                 "Не вдалося оновити завдання"
             );
         } finally {
+            taskRequestInFlight.current = false;
+
             setBusyTaskId(null);
+            setBusyTaskAction(null);
         }
     }
+
 
     // ==============================
     // Видалення завдання
     // ==============================
 
+
     async function handleDeleteTask(id: number) {
-        if (busyTaskId !== null) {
+        if (
+            taskRequestInFlight.current ||
+            busyTaskId !== null
+        ) {
             return;
         }
 
+        taskRequestInFlight.current = true;
+
         setBusyTaskId(id);
+        setBusyTaskAction("delete");
         setActionError(null);
 
         try {
@@ -212,9 +253,13 @@ function TaskManagerPage({
                 "Не вдалося видалити завдання"
             );
         } finally {
+            taskRequestInFlight.current = false;
+
             setBusyTaskId(null);
+            setBusyTaskAction(null);
         }
     }
+
 
     // ==============================
     // Статистика
@@ -241,7 +286,10 @@ function TaskManagerPage({
                 Тут відображаються тільки ваші завдання.
             </p>
 
-            <form onSubmit={handleAddTask}>
+            <form
+                onSubmit={handleAddTask}
+                aria-busy={adding}
+            >
                 <label htmlFor="new-task-title">
                     New task
                 </label>
@@ -269,6 +317,11 @@ function TaskManagerPage({
                 >
                     {adding ? "Adding..." : "Add Task"}
                 </button>
+                {adding && (
+                    <p role="status">
+                        Створюємо завдання...
+                    </p>
+                )}
             </form>
 
             {actionError && (
@@ -281,9 +334,22 @@ function TaskManagerPage({
                 </p>
             )}
 
+
             {loadError && (
-                <p role="alert">{loadError}</p>
+                <div role="alert">
+                    <p>{loadError}</p>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setRetryCount((current) => current + 1);
+                        }}
+                    >
+                        Спробувати знову
+                    </button>
+                </div>
             )}
+
 
             {!loading && !loadError && (
                 <>
@@ -324,6 +390,13 @@ function TaskManagerPage({
                                             : "In progress"}
                                     </span>
 
+                                    {busyTaskId === task.id &&
+                                        busyTaskAction === "toggle" && (
+                                            <span role="status">
+                                                {" — "}Оновлюємо...
+                                            </span>
+                                        )}
+
                                     <button
                                         type="button"
                                         disabled={busyTaskId !== null}
@@ -331,8 +404,9 @@ function TaskManagerPage({
                                             void handleDeleteTask(task.id);
                                         }}
                                     >
-                                        {busyTaskId === task.id
-                                            ? "Processing..."
+                                        {busyTaskId === task.id &&
+                                            busyTaskAction === "delete"
+                                            ? "Deleting..."
                                             : "Delete"}
                                     </button>
                                 </li>

@@ -31,8 +31,14 @@ function App() {
     const [authLoading, setAuthLoading] = useState(true);
     const [authError, setAuthError] = useState<string | null>(null);
 
+    const [authRetryCount, setAuthRetryCount] = useState(0);
+
+
     useEffect(() => {
         let ignore = false;
+
+        setAuthLoading(true);
+        setAuthError(null);
 
         async function checkSession() {
             try {
@@ -59,11 +65,16 @@ function App() {
         return () => {
             ignore = true;
         };
-    }, []);
+    }, [authRetryCount]);
+
 
     function handleUserChange(nextUser: AuthUser | null) {
         setUser(nextUser);
         setAuthError(null);
+    }
+
+    function handleRetryAuth() {
+        setAuthRetryCount((current) => current + 1);
     }
 
     const handleUnauthorized = useCallback(() => {
@@ -77,7 +88,9 @@ function App() {
         </main>
     ) : authError ? (
         <main>
-            <p role="alert">{authError}</p>
+            <p>
+                Завдання недоступні, поки ми не перевіримо сесію.
+            </p>
         </main>
     ) : user ? (
         <TaskManagerPage
@@ -112,6 +125,7 @@ function App() {
                 loading={authLoading}
                 error={authError}
                 onUserChange={handleUserChange}
+                onRetry={handleRetryAuth}
             />
         </div>
     );

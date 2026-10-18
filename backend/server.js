@@ -2,7 +2,9 @@
 const express = require("express");
 const tasksRouter = require("./routes/tasks.routes");
 const authRouter = require("./routes/auth.routes");
-
+const {
+    csrfOriginGuard
+} = require("./middleware/csrf.middleware");
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -11,9 +13,14 @@ app.use(express.json());
 app.get("/", (req, res) => {
     res.send("Hello from my first backend!");
 });
+// Перевірка походження запитів до API
+app.use("/api", csrfOriginGuard);
 
-app.use("/api/tasks", tasksRouter);
+// Маршрути авторизації
 app.use("/api/auth", authRouter);
+
+// Маршрути завдань
+app.use("/api/tasks", tasksRouter);
 
 app.use("/api", (req, res) => {
     res.status(404).json({

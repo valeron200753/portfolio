@@ -2,7 +2,8 @@
 const { test, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 
-// Тестова база SQLite в пам'яті
+// Тестова БД в пам'яті.
+// Цей рядок має бути ДО імпортів Backend.
 process.env.TASKS_DB_PATH = ":memory:";
 
 const app = require("../server");
@@ -13,13 +14,15 @@ const {
     getSessionUser
 } = require("../services/session.service");
 
+const TRUSTED_ORIGIN = "http://localhost:5173";
+
 let server;
 let baseURL;
 let testCookie;
 
-// ==============================
-// Налаштування тестового сервера
-// ==============================
+// ==================================
+// SETUP / TEARDOWN
+// ==================================
 
 before(async () => {
     const result = db.prepare(`
@@ -57,9 +60,9 @@ after(async () => {
     });
 });
 
-// ==============================
-// Допоміжні функції для тестів
-// ==============================
+// ==================================
+// HELPERS
+// ==================================
 
 function countUsers() {
     return db.prepare(
@@ -91,9 +94,12 @@ function makeTestTask(title, userId, completed = 0) {
     return Number(result.lastInsertRowid);
 }
 
-function jsonHeaders(cookie = null) {
+// Cookie додаємо тільки за потреби.
+// Origin додаємо для звичайних запитів,
+// які змінюють стан.
+function mutationHeaders(cookie = null) {
     const headers = {
-        "Content-Type": "application/json"
+        Origin: TRUSTED_ORIGIN
     };
 
     if (cookie !== null) {
@@ -103,11 +109,41 @@ function jsonHeaders(cookie = null) {
     return headers;
 }
 
+function jsonHeaders(cookie = null) {
+    return {
+        ...mutationHeaders(cookie),
+        "Content-Type": "application/json"
+    };
+}
+
+function get(path, cookie = null) {
+    return fetch(`${baseURL}${path}`, {
+        headers: cookie === null
+            ? {}
+            : { Cookie: cookie }
+    });
+}
+
 function postJSON(path, body, cookie = null) {
     return fetch(`${baseURL}${path}`, {
         method: "POST",
         headers: jsonHeaders(cookie),
         body: JSON.stringify(body)
+    });
+}
+
+function patchJSON(path, body, cookie = null) {
+    return fetch(`${baseURL}${path}`, {
+        method: "PATCH",
+        headers: jsonHeaders(cookie),
+        body: JSON.stringify(body)
+    });
+}
+
+function sendDELETE(path, cookie = null) {
+    return fetch(`${baseURL}${path}`, {
+        method: "DELETE",
+        headers: mutationHeaders(cookie)
     });
 }
 
@@ -128,7 +164,9 @@ async function registerAndLogin(credentials) {
 
     assert.equal(loginResponse.status, 200);
 
-    const setCookie = loginResponse.headers.get("set-cookie");
+    const setCookie = loginResponse.headers.get(
+        "set-cookie"
+    );
 
     assert.ok(setCookie);
 
@@ -140,14 +178,12 @@ async function registerAndLogin(credentials) {
     };
 }
 
-// ==============================
+// ==================================
 // CRUD TESTS
-// ==============================
+// ==================================
 
 test("GET /api/bananas should return 404", async () => {
-    const response = await fetch(
-        `${baseURL}/api/bananas`
-    );
+    const response = await get("/api/bananas");
 
     assert.equal(response.status, 404);
 
@@ -157,13 +193,9 @@ test("GET /api/bananas should return 404", async () => {
 });
 
 test("GET /api/tasks/banana should return 400", async () => {
-    const response = await fetch(
-        `${baseURL}/api/tasks/banana`,
-        {
-            headers: {
-                Cookie: testCookie
-            }
-        }
+    const response = await get(
+        "/api/tasks/banana",
+        testCookie
     );
 
     assert.equal(response.status, 400);
@@ -193,13 +225,9 @@ test("POST /api/tasks should create a task", async () => {
     assert.equal(task.title, "Learn Testing");
     assert.equal(task.completed, false);
 
-    const getResponse = await fetch(
-        `${baseURL}/api/tasks/${task.id}`,
-        {
-            headers: {
-                Cookie: testCookie
-            }
-        }
+    const getResponse = await get(
+        `/api/tasks/${task.id}`,
+        testCookie
     );
 
     assert.equal(getResponse.status, 200);
@@ -239,15 +267,12 @@ test("PATCH /api/tasks/:id should update a task", async () => {
 
     const createdTask = await createResponse.json();
 
-    const response = await fetch(
-        `${baseURL}/api/tasks/${createdTask.id}`,
+    const response = await patchJSON(
+        `/api/tasks/${createdTask.id}`,
         {
-            method: "PATCH",
-            headers: jsonHeaders(testCookie),
-            body: JSON.stringify({
-                completed: true
-            })
-        }
+            completed: true
+        },
+        testCookie
     );
 
     assert.equal(response.status, 200);
@@ -259,13 +284,9 @@ test("PATCH /api/tasks/:id should update a task", async () => {
         completed: true
     });
 
-    const getResponse = await fetch(
-        `${baseURL}/api/tasks/${createdTask.id}`,
-        {
-            headers: {
-                Cookie: testCookie
-            }
-        }
+    const getResponse = await get(
+        `/api/tasks/${createdTask.id}`,
+        testCookie
     );
 
     assert.equal(getResponse.status, 200);
@@ -287,32 +308,23 @@ test("DELETE /api/tasks/:id should delete a task", async () => {
 
     assert.equal(createResponse.status, 201);
 
-    const createdTask = await createResponse.json();
+    const task = await createResponse.json();
 
-    const deleteResponse = await fetch(
-        `${baseURL}/api/tasks/${createdTask.id}`,
-        {
-            method: "DELETE",
-            headers: {
-                Cookie: testCookie
-            }
-        }
+    const response = await sendDELETE(
+        `/api/tasks/${task.id}`,
+        testCookie
     );
 
-    assert.equal(deleteResponse.status, 200);
+    assert.equal(response.status, 200);
 
     assert.deepEqual(
-        await deleteResponse.json(),
-        createdTask
+        await response.json(),
+        task
     );
 
-    const getResponse = await fetch(
-        `${baseURL}/api/tasks/${createdTask.id}`,
-        {
-            headers: {
-                Cookie: testCookie
-            }
-        }
+    const getResponse = await get(
+        `/api/tasks/${task.id}`,
+        testCookie
     );
 
     assert.equal(getResponse.status, 404);
@@ -322,9 +334,9 @@ test("DELETE /api/tasks/:id should delete a task", async () => {
     });
 });
 
-// ==============================
+// ==================================
 // REGISTRATION TESTS
-// ==============================
+// ==================================
 
 test("POST /api/auth/register should create a user", async () => {
     const response = await postJSON(
@@ -345,13 +357,12 @@ test("POST /api/auth/register should create a user", async () => {
 
     assert.equal(user.email, "test@example.com");
     assert.equal(typeof user.created_at, "string");
-
     assert.equal(user.password, undefined);
     assert.equal(user.password_hash, undefined);
 });
 
 test("POST /api/auth/register should reject duplicate email", async () => {
-    const firstResponse = await postJSON(
+    const first = await postJSON(
         "/api/auth/register",
         {
             email: "duplicate@example.com",
@@ -359,9 +370,9 @@ test("POST /api/auth/register should reject duplicate email", async () => {
         }
     );
 
-    assert.equal(firstResponse.status, 201);
+    assert.equal(first.status, 201);
 
-    const secondResponse = await postJSON(
+    const second = await postJSON(
         "/api/auth/register",
         {
             email: "DUPLICATE@EXAMPLE.COM",
@@ -369,9 +380,9 @@ test("POST /api/auth/register should reject duplicate email", async () => {
         }
     );
 
-    assert.equal(secondResponse.status, 409);
+    assert.equal(second.status, 409);
 
-    assert.deepEqual(await secondResponse.json(), {
+    assert.deepEqual(await second.json(), {
         error: "Email already registered"
     });
 });
@@ -416,20 +427,18 @@ test("POST /api/auth/register should reject short password", async () => {
     assert.equal(countUsers(), beforeCount);
 });
 
-// ==============================
+// ==================================
 // LOGIN TESTS
-// ==============================
+// ==================================
 
 test("POST /api/auth/login should accept correct credentials", async () => {
-    const credentials = {
-        email: "loginuser@example.com",
-        password: "ExamplePassword123!"
-    };
-
     const {
         registeredUser,
         loginResponse
-    } = await registerAndLogin(credentials);
+    } = await registerAndLogin({
+        email: "loginuser@example.com",
+        password: "ExamplePassword123!"
+    });
 
     const loggedInUser = await loginResponse.json();
 
@@ -443,7 +452,7 @@ test("POST /api/auth/login should accept correct credentials", async () => {
 });
 
 test("POST /api/auth/login should reject wrong password", async () => {
-    const registerResponse = await postJSON(
+    const registered = await postJSON(
         "/api/auth/register",
         {
             email: "wrongpassword@example.com",
@@ -451,9 +460,9 @@ test("POST /api/auth/login should reject wrong password", async () => {
         }
     );
 
-    assert.equal(registerResponse.status, 201);
+    assert.equal(registered.status, 201);
 
-    const loginResponse = await postJSON(
+    const response = await postJSON(
         "/api/auth/login",
         {
             email: "wrongpassword@example.com",
@@ -461,9 +470,9 @@ test("POST /api/auth/login should reject wrong password", async () => {
         }
     );
 
-    assert.equal(loginResponse.status, 401);
+    assert.equal(response.status, 401);
 
-    assert.deepEqual(await loginResponse.json(), {
+    assert.deepEqual(await response.json(), {
         error: "Invalid email or password"
     });
 });
@@ -484,9 +493,9 @@ test("POST /api/auth/login should reject unknown email", async () => {
     });
 });
 
-// ==============================
+// ==================================
 // SESSION TESTS
-// ==============================
+// ==================================
 
 test("Sessions should require an existing user", () => {
     assert.throws(() => {
@@ -535,9 +544,7 @@ test("POST /api/auth/login should create a session cookie", async () => {
 });
 
 test("GET /api/auth/me should reject unauthenticated users", async () => {
-    const response = await fetch(
-        `${baseURL}/api/auth/me`
-    );
+    const response = await get("/api/auth/me");
 
     assert.equal(response.status, 401);
 
@@ -547,23 +554,17 @@ test("GET /api/auth/me should reject unauthenticated users", async () => {
 });
 
 test("GET /api/auth/me should return authenticated user", async () => {
-    const credentials = {
-        email: "protecteduser@example.com",
-        password: "ExamplePassword123!"
-    };
-
     const {
         registeredUser,
         sessionCookie
-    } = await registerAndLogin(credentials);
+    } = await registerAndLogin({
+        email: "protecteduser@example.com",
+        password: "ExamplePassword123!"
+    });
 
-    const response = await fetch(
-        `${baseURL}/api/auth/me`,
-        {
-            headers: {
-                Cookie: sessionCookie
-            }
-        }
+    const response = await get(
+        "/api/auth/me",
+        sessionCookie
     );
 
     assert.equal(response.status, 200);
@@ -571,27 +572,18 @@ test("GET /api/auth/me should return authenticated user", async () => {
     const user = await response.json();
 
     assert.deepEqual(user, registeredUser);
-
     assert.equal(user.password_hash, undefined);
 });
 
 test("POST /api/auth/logout should revoke the session", async () => {
-    const credentials = {
+    const { sessionCookie } = await registerAndLogin({
         email: "logoutapi@example.com",
         password: "ExamplePassword123!"
-    };
+    });
 
-    const { sessionCookie } = await registerAndLogin(
-        credentials
-    );
-
-    const beforeLogout = await fetch(
-        `${baseURL}/api/auth/me`,
-        {
-            headers: {
-                Cookie: sessionCookie
-            }
-        }
+    const beforeLogout = await get(
+        "/api/auth/me",
+        sessionCookie
     );
 
     assert.equal(beforeLogout.status, 200);
@@ -600,9 +592,7 @@ test("POST /api/auth/logout should revoke the session", async () => {
         `${baseURL}/api/auth/logout`,
         {
             method: "POST",
-            headers: {
-                Cookie: sessionCookie
-            }
+            headers: mutationHeaders(sessionCookie)
         }
     );
 
@@ -613,51 +603,45 @@ test("POST /api/auth/logout should revoke the session", async () => {
     );
 
     assert.ok(clearedCookie);
+
     assert.match(clearedCookie, /session=;/);
     assert.match(clearedCookie, /Expires=/i);
 
-    const afterLogout = await fetch(
-        `${baseURL}/api/auth/me`,
-        {
-            headers: {
-                Cookie: sessionCookie
-            }
-        }
+    const afterLogout = await get(
+        "/api/auth/me",
+        sessionCookie
     );
 
     assert.equal(afterLogout.status, 401);
 });
 
-// ==============================
+// ==================================
 // DATABASE OWNERSHIP TESTS
-// ==============================
+// ==================================
 
 test("tasks should belong to users through a foreign key", () => {
     const columns = db.prepare(
         "PRAGMA table_info(tasks)"
     ).all();
 
-    assert.equal(
-        columns.some(column => column.name === "user_id"),
-        true
+    const hasUserId = columns.some(
+        (column) => column.name === "user_id"
     );
+
+    assert.equal(hasUserId, true);
 
     const foreignKeys = db.prepare(
         "PRAGMA foreign_key_list(tasks)"
     ).all();
 
-    const userForeignKey = foreignKeys.find(
-        key =>
+    const userFK = foreignKeys.find(
+        (key) =>
             key.table === "users" &&
             key.from === "user_id"
     );
 
-    assert.ok(userForeignKey);
-
-    assert.equal(
-        userForeignKey.on_delete,
-        "CASCADE"
-    );
+    assert.ok(userFK);
+    assert.equal(userFK.on_delete, "CASCADE");
 
     const settings = db.prepare(
         "PRAGMA foreign_keys"
@@ -685,21 +669,17 @@ test("GET /api/tasks/mine should return only own tasks", async () => {
         secondId
     );
 
-    const unauthorized = await fetch(
-        `${baseURL}/api/tasks/mine`
+    const unauthorized = await get(
+        "/api/tasks/mine"
     );
 
     assert.equal(unauthorized.status, 401);
 
     const token = createSession(firstId);
 
-    const response = await fetch(
-        `${baseURL}/api/tasks/mine`,
-        {
-            headers: {
-                Cookie: `session=${token}`
-            }
-        }
+    const response = await get(
+        "/api/tasks/mine",
+        `session=${token}`
     );
 
     assert.equal(response.status, 200);
@@ -732,33 +712,29 @@ test("GET /api/tasks/mine/:id should enforce ownership", async () => {
         secondId
     );
 
-    const token = createSession(firstId);
+    const cookie = `session=${createSession(firstId)}`;
 
-    const headers = {
-        Cookie: `session=${token}`
-    };
-
-    const ownResponse = await fetch(
-        `${baseURL}/api/tasks/mine/${ownTaskId}`,
-        { headers }
+    const own = await get(
+        `/api/tasks/mine/${ownTaskId}`,
+        cookie
     );
 
-    assert.equal(ownResponse.status, 200);
+    assert.equal(own.status, 200);
 
-    const task = await ownResponse.json();
+    const task = await own.json();
 
     assert.equal(task.id, ownTaskId);
     assert.equal(task.title, "My protected task");
 
-    const otherResponse = await fetch(
-        `${baseURL}/api/tasks/mine/${otherTaskId}`,
-        { headers }
+    const other = await get(
+        `/api/tasks/mine/${otherTaskId}`,
+        cookie
     );
 
-    assert.equal(otherResponse.status, 404);
+    assert.equal(other.status, 404);
 
-    const unauthorized = await fetch(
-        `${baseURL}/api/tasks/mine/${ownTaskId}`
+    const unauthorized = await get(
+        `/api/tasks/mine/${ownTaskId}`
     );
 
     assert.equal(unauthorized.status, 401);
@@ -810,14 +786,12 @@ test("POST /api/tasks/mine should create task for authenticated user", async () 
     assert.equal(unauthorized.status, 401);
 });
 
-// ==============================
+// ==================================
 // AUTHENTICATION GUARD TESTS
-// ==============================
+// ==================================
 
 test("GET /api/tasks should require authentication", async () => {
-    const response = await fetch(
-        `${baseURL}/api/tasks`
-    );
+    const response = await get("/api/tasks");
 
     assert.equal(response.status, 401);
 });
@@ -828,8 +802,8 @@ test("GET /api/tasks/:id should require authentication", async () => {
         null
     );
 
-    const response = await fetch(
-        `${baseURL}/api/tasks/${taskId}`
+    const response = await get(
+        `/api/tasks/${taskId}`
     );
 
     assert.equal(response.status, 401);
@@ -838,6 +812,7 @@ test("GET /api/tasks/:id should require authentication", async () => {
 test("POST /api/tasks should require authentication", async () => {
     const beforeCount = countTasks();
 
+    // Origin є, але cookie НЕ передаємо
     const response = await postJSON(
         "/api/tasks",
         {
@@ -860,58 +835,40 @@ test("PATCH /api/tasks/:id should require authentication", async () => {
         userId
     );
 
-    // Намагаємося змінити завдання без сесії
-    const response = await fetch(
-        `${baseURL}/api/tasks/${taskId}`,
+    const response = await patchJSON(
+        `/api/tasks/${taskId}`,
         {
-            method: "PATCH",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                completed: true
-            })
+            completed: true
         }
     );
 
     assert.equal(response.status, 401);
 
-    // Перевіряємо стан завдання в SQLite
     const savedTask = db.prepare(`
         SELECT completed
         FROM tasks
         WHERE id = ?
     `).get(taskId);
 
-    // Неавторизований запит не повинен змінювати дані
     assert.equal(savedTask.completed, 0);
 });
 
-
 test("DELETE /api/tasks/:id should require authentication", async () => {
-    // Створюємо тестового користувача
     const userId = makeTestUser(
         "delete-unauthorized@example.com"
     );
 
-    // Створюємо його завдання
     const taskId = makeTestTask(
         "Protected DELETE task",
         userId
     );
 
-    // Намагаємося видалити завдання без cookie
-    const response = await fetch(
-        `${baseURL}/api/tasks/${taskId}`,
-        {
-            method: "DELETE"
-        }
+    const response = await sendDELETE(
+        `/api/tasks/${taskId}`
     );
 
-    // Без авторизації видалення заборонено
     assert.equal(response.status, 401);
 
-    // Перевіряємо, чи залишилося завдання в SQLite
     const savedTask = db.prepare(`
         SELECT id, title
         FROM tasks
@@ -927,7 +884,6 @@ test("DELETE /api/tasks/:id should require authentication", async () => {
 });
 
 test("DELETE /api/tasks/:id should not delete another user's task", async () => {
-    // Створюємо двох користувачів
     const ownerId = makeTestUser(
         "delete-owner@example.com"
     );
@@ -936,30 +892,20 @@ test("DELETE /api/tasks/:id should not delete another user's task", async () => 
         "delete-stranger@example.com"
     );
 
-    // Завдання належить першому користувачу
     const taskId = makeTestTask(
         "My private task",
         ownerId
     );
 
-    // Авторизуємо другого користувача
-    const token = createSession(strangerId);
+    const cookie = `session=${createSession(strangerId)}`;
 
-    // Другий користувач намагається видалити чуже
-    const response = await fetch(
-        `${baseURL}/api/tasks/${taskId}`,
-        {
-            method: "DELETE",
-            headers: {
-                Cookie: `session=${token}`
-            }
-        }
+    const response = await sendDELETE(
+        `/api/tasks/${taskId}`,
+        cookie
     );
 
-    // Доступ до чужого завдання заборонений
     assert.equal(response.status, 404);
 
-    // Перевіряємо, що завдання залишилося
     const savedTask = db.prepare(`
         SELECT id, title, user_id
         FROM tasks
@@ -974,7 +920,6 @@ test("DELETE /api/tasks/:id should not delete another user's task", async () => 
 });
 
 test("PATCH /api/tasks/:id should not update another user's task", async () => {
-    // Створюємо двох користувачів
     const ownerId = makeTestUser(
         "patch-owner@example.com"
     );
@@ -983,34 +928,23 @@ test("PATCH /api/tasks/:id should not update another user's task", async () => {
         "patch-stranger@example.com"
     );
 
-    // Завдання належить першому користувачу
     const taskId = makeTestTask(
         "My private PATCH task",
         ownerId
     );
 
-    // Створюємо сесію другого користувача
-    const token = createSession(strangerId);
+    const cookie = `session=${createSession(strangerId)}`;
 
-    // Другий користувач намагається змінити чуже завдання
-    const response = await fetch(
-        `${baseURL}/api/tasks/${taskId}`,
+    const response = await patchJSON(
+        `/api/tasks/${taskId}`,
         {
-            method: "PATCH",
-            headers: {
-                "Content-Type": "application/json",
-                Cookie: `session=${token}`
-            },
-            body: JSON.stringify({
-                completed: true
-            })
-        }
+            completed: true
+        },
+        cookie
     );
 
-    // Чуже завдання має бути недоступним
     assert.equal(response.status, 404);
 
-    // Перевіряємо реальний стан завдання в SQLite
     const savedTask = db.prepare(`
         SELECT id, title, completed, user_id
         FROM tasks
@@ -1022,8 +956,92 @@ test("PATCH /api/tasks/:id should not update another user's task", async () => {
     assert.equal(savedTask.id, taskId);
     assert.equal(savedTask.user_id, ownerId);
     assert.equal(savedTask.completed, 0);
+
     assert.equal(
         savedTask.title,
         "My private PATCH task"
     );
+});
+
+// ==================================
+// CSRF TESTS
+// ==================================
+
+test("POST /api/tasks should reject foreign Origin", async () => {
+    const userId = makeTestUser(
+        "csrf-owner@example.com"
+    );
+
+    const token = createSession(userId);
+
+    const beforeCount = db.prepare(`
+        SELECT COUNT(*) AS total
+        FROM tasks
+        WHERE user_id = ?
+    `).get(userId).total;
+
+    // Origin навмисно недозволений
+    const response = await fetch(
+        `${baseURL}/api/tasks`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Origin: "https://attacker.example",
+                Cookie: `session=${token}`
+            },
+            body: JSON.stringify({
+                title: "Unexpected task"
+            })
+        }
+    );
+
+    assert.equal(response.status, 403);
+
+    const afterCount = db.prepare(`
+        SELECT COUNT(*) AS total
+        FROM tasks
+        WHERE user_id = ?
+    `).get(userId).total;
+
+    assert.equal(afterCount, beforeCount);
+});
+
+test("POST /api/tasks should reject missing Origin", async () => {
+    const userId = makeTestUser(
+        "csrf-missing-origin@example.com"
+    );
+
+    const token = createSession(userId);
+
+    const beforeCount = db.prepare(`
+        SELECT COUNT(*) AS total
+        FROM tasks
+        WHERE user_id = ?
+    `).get(userId).total;
+
+    // Origin тут навмисно ВІДСУТНІЙ
+    const response = await fetch(
+        `${baseURL}/api/tasks`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `session=${token}`
+            },
+            body: JSON.stringify({
+                title: "Task without Origin"
+            })
+        }
+    );
+
+    assert.equal(response.status, 403);
+
+    const afterCount = db.prepare(`
+        SELECT COUNT(*) AS total
+        FROM tasks
+        WHERE user_id = ?
+    `).get(userId).total;
+
+    assert.equal(afterCount, beforeCount);
 });

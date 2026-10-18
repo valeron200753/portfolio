@@ -1,33 +1,110 @@
-import { useEffect, useState, type FormEvent } from "react";
+
+import {
+    useEffect,
+    useState,
+    type FormEvent
+} from "react";
+
 import type { Task } from "../types/task";
 
-function TaskManagerPage() {
-    const [newTaskTitle, setNewTaskTitle] = useState("");
+import {
+    getMyTasks,
+    createMyTask,
+    updateMyTask,
+    deleteMyTask,
+    UnauthorizedError
+} from "../api/tasks";
+
+type TaskManagerPageProps = {
+    onUnauthorized: () => void;
+};
+
+function TaskManagerPage({
+    onUnauthorized
+}: TaskManagerPageProps) {
     const [tasks, setTasks] = useState<Task[]>([]);
+
+    const [newTaskTitle, setNewTaskTitle] = useState("");
+
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
+
+    const [actionError, setActionError] = useState<string | null>(null);
+
+    const [adding, setAdding] = useState(false);
+    const [busyTaskId, setBusyTaskId] = useState<number | null>(null);
+
+    // ==============================
+    // Завантаження завдань
+    // ==============================
+
     useEffect(() => {
         const controller = new AbortController();
 
-        fetch("/api/tasks", {
-            signal: controller.signal
-        })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
+        async function loadTasks() {
+            setLoading(true);
+            setLoadError(null);
+
+            try {
+                const data = await getMyTasks(
+                    controller.signal
+                );
+
+                if (!controller.signal.aborted) {
+                    setTasks(data);
+                }
+            } catch (error) {
+                if (controller.signal.aborted) {
+                    return;
                 }
 
-                return response.json() as Promise<Task[]>;
-            })
-            .then((data) => {
-                setTasks(data);
-            })
-            .catch((error) => {
-                if (error instanceof Error && error.name !== "AbortError") {
-                    console.error("Failed to load tasks:", error);
+                if (error instanceof UnauthorizedError) {
+                    onUnauthorized();
+                    return;
                 }
-            });
 
-        return () => controller.abort();
-    }, []);
+                setTasks([]);
+                setLoadError(
+                    "Не вдалося завантажити завдання."
+                );
+            } finally {
+                if (!controller.signal.aborted) {
+                    setLoading(false);
+                }
+            }
+        }
+
+        void loadTasks();
+
+        return () => {
+            controller.abort();
+        };
+    }, [onUnauthorized]);
+
+    // ==============================
+    // Обробка помилок дій
+    // ==============================
+
+    function handleActionError(
+        error: unknown,
+        action: string
+    ) {
+        if (error instanceof UnauthorizedError) {
+            onUnauthorized();
+            return;
+        }
+
+        const message = error instanceof Error
+            ? error.message
+            : "Невідома помилка";
+
+        setActionError(`${action}: ${message}`);
+    }
+
+    // ==============================
+    // Створення завдання
+    // ==============================
+
     async function handleAddTask(
         event: FormEvent<HTMLFormElement>
     ) {
@@ -35,152 +112,235 @@ function TaskManagerPage() {
 
         const title = newTaskTitle.trim();
 
-        if (title === "") {
+        if (
+            title === "" ||
+            adding ||
+            loading ||
+            loadError !== null
+        ) {
             return;
         }
 
+        setAdding(true);
+        setActionError(null);
+
         try {
-            const response = await fetch("/api/tasks", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ title })
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-
-            const newTask: Task = await response.json();
+            const newTask = await createMyTask(title);
 
             setTasks((currentTasks) => [
-                ...currentTasks,
-                newTask
+                newTask,
+                ...currentTasks
             ]);
 
             setNewTaskTitle("");
-
         } catch (error) {
-            console.error("Failed to create task:", error);
-            alert("Could not create task.");
+            handleActionError(
+                error,
+                "Не вдалося створити завдання"
+            );
+        } finally {
+            setAdding(false);
         }
     }
+
+    // ==============================
+    // Зміна статусу завдання
+    // ==============================
+
     async function toggleTask(id: number) {
-        const task = tasks.find((task) => task.id === id);
+        if (busyTaskId !== null) {
+            return;
+        }
+
+        const task = tasks.find(
+            (item) => item.id === id
+        );
 
         if (!task) {
             return;
         }
 
+        setBusyTaskId(id);
+        setActionError(null);
+
         try {
-            const response = await fetch(`/api/tasks/${id}`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    completed: !task.completed
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-
-            const updatedTask: Task = await response.json();
+            const updatedTask = await updateMyTask(
+                id,
+                !task.completed
+            );
 
             setTasks((currentTasks) =>
-                currentTasks.map((task) =>
-                    task.id === id ? updatedTask : task
+                currentTasks.map((item) =>
+                    item.id === id
+                        ? updatedTask
+                        : item
                 )
             );
-
         } catch (error) {
-            console.error("Failed to update task:", error);
-            alert("Could not update task.");
+            handleActionError(
+                error,
+                "Не вдалося оновити завдання"
+            );
+        } finally {
+            setBusyTaskId(null);
         }
     }
-    async function deleteTask(id: number) {
-        try {
-            const response = await fetch(`/api/tasks/${id}`, {
-                method: "DELETE"
-            });
 
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
+    // ==============================
+    // Видалення завдання
+    // ==============================
+
+    async function handleDeleteTask(id: number) {
+        if (busyTaskId !== null) {
+            return;
+        }
+
+        setBusyTaskId(id);
+        setActionError(null);
+
+        try {
+            await deleteMyTask(id);
 
             setTasks((currentTasks) =>
-                currentTasks.filter((task) => task.id !== id)
+                currentTasks.filter(
+                    (task) => task.id !== id
+                )
             );
-
         } catch (error) {
-            console.error("Failed to delete task:", error);
-            alert("Could not delete task.");
+            handleActionError(
+                error,
+                "Не вдалося видалити завдання"
+            );
+        } finally {
+            setBusyTaskId(null);
         }
     }
+
+    // ==============================
+    // Статистика
+    // ==============================
+
     const totalTasks = tasks.length;
 
     const completedTasks = tasks.filter(
         (task) => task.completed
     ).length;
 
-    const remainingTasks = totalTasks - completedTasks;
+    const remainingTasks =
+        totalTasks - completedTasks;
+
+    // ==============================
+    // JSX
+    // ==============================
+
     return (
         <main>
-            <h1>Task Manager</h1>
+            <h1>My Task Manager</h1>
+
+            <p>
+                Тут відображаються тільки ваші завдання.
+            </p>
+
             <form onSubmit={handleAddTask}>
+                <label htmlFor="new-task-title">
+                    New task
+                </label>
+
                 <input
+                    id="new-task-title"
                     type="text"
                     placeholder="Enter a new task..."
                     value={newTaskTitle}
                     onChange={(event) =>
                         setNewTaskTitle(event.target.value)
                     }
+                    required
+                    disabled={loading || adding || loadError !== null}
                 />
 
-                <button type="submit">
-                    Add Task
+                <button
+                    type="submit"
+                    disabled={
+                        loading ||
+                        adding ||
+                        loadError !== null ||
+                        !newTaskTitle.trim()
+                    }
+                >
+                    {adding ? "Adding..." : "Add Task"}
                 </button>
             </form>
-            <section>
-                <h2>Task Statistics</h2>
 
-                <p>Total tasks: {totalTasks}</p>
-                <p>Completed: {completedTasks}</p>
-                <p>Remaining: {remainingTasks}</p>
-            </section>
-            <ul>
-                {tasks.map((task) => (
-                    <li key={task.id}>
-                        <label>
-                            <input
-                                type="checkbox"
-                                checked={task.completed}
-                                onChange={() => toggleTask(task.id)}
-                            />
+            {actionError && (
+                <p role="alert">{actionError}</p>
+            )}
 
-                            {task.title}
-                        </label>
+            {loading && (
+                <p role="status">
+                    Завантажуємо завдання...
+                </p>
+            )}
 
-                        <span>
-                            {" — "}
-                            {task.completed
-                                ? "Completed"
-                                : "In progress"}
-                        </span>
-                        <button
-                            type="button"
-                            onClick={() => deleteTask(task.id)}
-                        >
-                            Delete
-                        </button>
-                    </li>
+            {loadError && (
+                <p role="alert">{loadError}</p>
+            )}
 
-                ))}
+            {!loading && !loadError && (
+                <>
+                    <section>
+                        <h2>Task Statistics</h2>
 
-            </ul>
+                        <p>Total tasks: {totalTasks}</p>
+                        <p>Completed: {completedTasks}</p>
+                        <p>Remaining: {remainingTasks}</p>
+                    </section>
+
+                    {tasks.length === 0 ? (
+                        <p>
+                            Завдань поки немає.
+                            Створіть своє перше!
+                        </p>
+                    ) : (
+                        <ul>
+                            {tasks.map((task) => (
+                                <li key={task.id}>
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            checked={task.completed}
+                                            disabled={busyTaskId !== null}
+                                            onChange={() => {
+                                                void toggleTask(task.id);
+                                            }}
+                                        />
+
+                                        {task.title}
+                                    </label>
+
+                                    <span>
+                                        {" — "}
+                                        {task.completed
+                                            ? "Completed"
+                                            : "In progress"}
+                                    </span>
+
+                                    <button
+                                        type="button"
+                                        disabled={busyTaskId !== null}
+                                        onClick={() => {
+                                            void handleDeleteTask(task.id);
+                                        }}
+                                    >
+                                        {busyTaskId === task.id
+                                            ? "Processing..."
+                                            : "Delete"}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </>
+            )}
         </main>
     );
 }

@@ -1,10 +1,35 @@
+
 const { DatabaseSync } = require("node:sqlite");
 const path = require("node:path");
-const dbPath = process.env.TASKS_DB_PATH ||
+
+const isProduction =
+    process.env.NODE_ENV === "production";
+
+const configuredPath = process.env.TASKS_DB_PATH;
+
+// У Production потрібна постійна файлова база.
+// Використання :memory: забороняємо.
+if (isProduction) {
+    if (
+        !configuredPath ||
+        configuredPath === ":memory:" ||
+        !path.isAbsolute(configuredPath)
+    ) {
+        throw new Error(
+            "Production requires an absolute " +
+            "TASKS_DB_PATH on persistent storage"
+        );
+    }
+}
+
+const dbPath = configuredPath ||
     path.join(__dirname, "tasks.db");
 
 const db = new DatabaseSync(dbPath);
+
+// Зберігаємо перевірку зовнішніх ключів
 db.exec("PRAGMA foreign_keys = ON");
+
 
 db.exec(`
     CREATE TABLE IF NOT EXISTS tasks (

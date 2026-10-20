@@ -94,7 +94,7 @@ async function login(req, res, next) {
         return res.status(200).json(user);
 
 
-        return res.status(200).json(user);
+
     } catch (err) {
         next(err);
     }

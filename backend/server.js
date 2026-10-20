@@ -1,5 +1,10 @@
 
 const express = require("express");
+const helmet = require("helmet");
+const {
+    loginLimiter,
+    registerLimiter
+} = require("./middleware/rateLimit.middleware");
 const tasksRouter = require("./routes/tasks.routes");
 const authRouter = require("./routes/auth.routes");
 const {
@@ -8,13 +13,23 @@ const {
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(express.json());
+// Захисні HTTP-заголовки
+app.use(helmet());
+
+// Обмеження розміру JSON
+app.use(express.json({
+    limit: "100kb"
+}));
 
 app.get("/", (req, res) => {
     res.send("Hello from my first backend!");
 });
 // Перевірка походження запитів до API
 app.use("/api", csrfOriginGuard);
+
+// Обмеження спроб входу та реєстрації
+app.use("/api/auth/login", loginLimiter);
+app.use("/api/auth/register", registerLimiter);
 
 // Маршрути авторизації
 app.use("/api/auth", authRouter);

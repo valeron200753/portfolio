@@ -1,0 +1,75 @@
+
+/* =====================================
+   TOKYO.DEV — DESIGN TOKENS
+   ===================================== */
+
+/* DARK FOREST — основна тема */
+
+:root,
+.dark {
+    color-scheme: dark;
+
+    --bg-primary: #0B0F14;
+    --bg-secondary: #10161D;
+
+    --surface-primary: #111820;
+    --surface-raised: #19232E;
+
+    --border-primary: #1E293B;
+
+    --text-primary: #F1F5F9;
+    --text-secondary: #94A3B8;
+
+    --accent: #22C55E;
+    --accent-hover: #4ADE80;
+    --accent-contrast: #071009;
+    --accent-soft: rgba(34, 197, 94, 0.10);
+
+    --header-bg: rgba(11, 15, 20, 0.88);
+
+    --font-sans:
+        "Inter",
+        "Manrope",
+        system-ui,
+        -apple-system,
+        sans-serif;
+
+    --font-mono:
+        "JetBrains Mono",
+        "SFMono-Regular",
+        Consolas,
+        monospace;
+
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 18px;
+
+    --container-width: 1160px;
+
+    --transition-fast: 180ms ease;
+    --transition-normal: 260ms ease;
+}
+
+/* LIGHT — альтернативна тема */
+
+.light {
+    color-scheme: light;
+
+    --bg-primary: #F5F8F7;
+    --bg-secondary: #EDF2EF;
+
+    --surface-primary: #FFFFFF;
+    --surface-raised: #F1F5F3;
+
+    --border-primary: #D9E3DE;
+
+    --text-primary: #122019;
+    --text-secondary: #5B6B63;
+
+    --accent: #167A3D;
+    --accent-hover: #126B35;
+    --accent-contrast: #FFFFFF;
+    --accent-soft: rgba(22, 122, 61, 0.08);
+
+    --header-bg: rgba(245, 248, 247, 0.91);
+}

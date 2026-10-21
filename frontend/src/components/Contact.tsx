@@ -1,147 +1,360 @@
+
 import { useState, type FormEvent } from "react";
+
 type Subject = "general" | "job" | "project";
-type FormStatus = "idle" | "error" | "success";
+type FormStatus = "idle" | "error" | "ready";
+
 interface ContactProps {
     email: string;
     githubUrl: string;
 }
 
+const subjectLabels: Record<Subject, string> = {
+    general: "General question",
+    job: "Job opportunity",
+    project: "Project collaboration"
+};
+
 function Contact({ email, githubUrl }: ContactProps) {
     const [name, setName] = useState("");
     const [formEmail, setFormEmail] = useState("");
+    const [subject, setSubject] =
+        useState<Subject>("general");
     const [message, setMessage] = useState("");
-    const [formMessage, setFormMessage] = useState("");
-    const [subject, setSubject] = useState<Subject>("general");
-    const [formStatus, setFormStatus] = useState<FormStatus>("idle");
 
-    function clearFormFeedback() {
+    const [formStatus, setFormStatus] =
+        useState<FormStatus>("idle");
+    const [formMessage, setFormMessage] = useState("");
+    const [draftUrl, setDraftUrl] =
+        useState<string | null>(null);
+
+    const contactEmail = email.trim();
+
+    const emailConfigured =
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail) &&
+        !/@example\.(com|org|net)$/i.test(contactEmail);
+
+    function clearFeedback() {
         setFormStatus("idle");
         setFormMessage("");
+        setDraftUrl(null);
     }
-    function validateForm(): string | null {
-        if (
-            name.trim() === "" ||
-            formEmail.trim() === "" ||
-            message.trim() === ""
-        ) {
-            return "Please fill in all fields";
-        }
 
-        if (!formEmail.includes("@")) {
-            return "Please enter a valid email";
-        }
-
-        if (message.trim().length < 10) {
-            return "Message must contain at least 10 characters";
-        }
-
-        return null;
-    }
-    function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    function handleSubmit(
+        event: FormEvent<HTMLFormElement>
+    ) {
         event.preventDefault();
 
-        const validationError = validateForm();
+        clearFeedback();
 
-        if (validationError) {
-            setFormMessage(validationError);
+        if (!emailConfigured) {
             setFormStatus("error");
+            setFormMessage(
+                "The contact email is not configured yet."
+            );
             return;
         }
 
+        if (
+            !name.trim() ||
+            !formEmail.trim() ||
+            !message.trim()
+        ) {
+            setFormStatus("error");
+            setFormMessage("Please fill in all fields.");
+            return;
+        }
+
+        const validEmail =
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+                formEmail.trim()
+            );
+
+        if (!validEmail) {
+            setFormStatus("error");
+            setFormMessage(
+                "Please enter a valid email address."
+            );
+            return;
+        }
+
+        if (message.trim().length < 10) {
+            setFormStatus("error");
+            setFormMessage(
+                "Your message must contain at least 10 characters."
+            );
+            return;
+        }
+
+        const emailSubject =
+            `[TOKYO.DEV] ${subjectLabels[subject]}`;
+
+        const emailBody = [
+            `Name: ${name.trim()}`,
+            `Email: ${formEmail.trim()}`,
+            `Subject: ${subjectLabels[subject]}`,
+            "",
+            message.trim(),
+            "",
+            `Reply to: ${formEmail.trim()}`
+        ].join("\n");
+
+        const url =
+            `mailto:${contactEmail}` +
+            `?subject=${encodeURIComponent(emailSubject)}` +
+            `&body=${encodeURIComponent(emailBody)}`;
+
+        setDraftUrl(url);
+        setFormStatus("ready");
         setFormMessage(
-            `Thank you, ${name}! Subject: ${subject}. I'll contact you soon.`
+            "Your email draft is ready. Open it in your email app and send it manually."
         );
-
-        setFormStatus("success");
-
-        setName("");
-        setFormEmail("");
-        setMessage("");
-        setSubject("general");
     }
 
     return (
-        <section id="contact">
-            <h2>Contact</h2>
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="text"
-                    placeholder="Your name"
-                    value={name}
-                    onChange={(event) => {
-                        setName(event.target.value);
-                        clearFormFeedback();
-                    }}
-                />
+        <section
+            id="contact"
+            className="contact-layout"
+            aria-label="Contact information and message form"
+        >
+            <div className="contact-info">
+                <div className="contact-info__intro">
+                    <span className="contact-eyebrow">
+                        LET'S CONNECT
+                    </span>
 
-                <input
-                    type="email"
-                    placeholder="Your email"
-                    value={formEmail}
-                    onChange={(event) => {
-                        setFormEmail(event.target.value);
-                        clearFormFeedback();
-                    }}
-                />
-                <select
-                    value={subject}
-                    onChange={(event) => {
-                        setSubject(event.target.value as Subject);
-                        clearFormFeedback();
-                    }}
+                    <h2>
+                        Start a <span>conversation.</span>
+                    </h2>
+
+                    <p>
+                        Whether it's a job opportunity,
+                        collaboration or a question about my
+                        projects, feel free to reach out.
+                    </p>
+                </div>
+
+                <div className="contact-method">
+                    <div
+                        className="contact-method__icon"
+                        aria-hidden="true"
+                    >
+                        @
+                    </div>
+
+                    <div>
+                        <span className="contact-method__label">
+                            EMAIL
+                        </span>
+
+                        <h3>Direct contact</h3>
+
+                        {emailConfigured ? (
+                            <a href={`mailto:${contactEmail}`}>
+                                {contactEmail}
+                                <span aria-hidden="true"> ↗</span>
+                            </a>
+                        ) : (
+                            <p>
+                                Email address coming soon.
+                            </p>
+                        )}
+                    </div>
+                </div>
+
+                <div className="contact-method">
+                    <div
+                        className="contact-method__icon"
+                        aria-hidden="true"
+                    >
+                        {"</>"}
+                    </div>
+
+                    <div>
+                        <span className="contact-method__label">
+                            GITHUB
+                        </span>
+
+                        <h3>Explore my code</h3>
+
+                        <a
+                            href={githubUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            valeron200753
+                            <span aria-hidden="true"> ↗</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div className="contact-info__note">
+                    <span aria-hidden="true">✦</span>
+                    Interested in frontend, backend and
+                    full-stack development opportunities.
+                </div>
+            </div>
+
+            <div className="contact-form-card">
+                <div className="contact-form-card__heading">
+                    <span className="contact-eyebrow">
+                        MESSAGE FORM
+                    </span>
+
+                    <h2 id="contact-form-title">
+                        Tell me about your idea.
+                    </h2>
+
+                    <p>
+                        Fill out the form to prepare an email
+                        in your preferred mail application.
+                    </p>
+                </div>
+
+                <form
+                    onSubmit={handleSubmit}
+                    className="contact-form"
+                    aria-labelledby="contact-form-title"
+                    noValidate
                 >
-                    <option value="general">
-                        General question
-                    </option>
+                    <div className="contact-form__row">
+                        <div className="contact-form__field">
+                            <label htmlFor="contact-name">
+                                Your name
+                            </label>
 
-                    <option value="job">
-                        Job offer
-                    </option>
+                            <input
+                                id="contact-name"
+                                type="text"
+                                value={name}
+                                placeholder="Your name"
+                                autoComplete="name"
+                                maxLength={80}
+                                required
+                                onChange={(event) => {
+                                    setName(event.target.value);
+                                    clearFeedback();
+                                }}
+                            />
+                        </div>
 
-                    <option value="project">
-                        Project collaboration
-                    </option>
-                </select>
-                <textarea
-                    placeholder="Your message"
-                    value={message}
-                    maxLength={200}
-                    onChange={(event) => {
-                        setMessage(event.target.value);
-                        clearFormFeedback();
-                    }}
-                />
+                        <div className="contact-form__field">
+                            <label htmlFor="contact-email">
+                                Your email
+                            </label>
 
-                <p>{message.length} / 200</p>
+                            <input
+                                id="contact-email"
+                                type="email"
+                                value={formEmail}
+                                placeholder="you@example.com"
+                                autoComplete="email"
+                                maxLength={254}
+                                required
+                                onChange={(event) => {
+                                    setFormEmail(event.target.value);
+                                    clearFeedback();
+                                }}
+                            />
+                        </div>
+                    </div>
 
-                <button type="submit">
-                    Send
-                </button>
-            </form>
-            {formStatus === "error" && (
-                <p>❌ {formMessage}</p>
-            )}
+                    <div className="contact-form__field">
+                        <label htmlFor="contact-subject">
+                            Subject
+                        </label>
 
-            {formStatus === "success" && (
-                <p>✅ {formMessage}</p>
-            )}
-            <p>Subject: {subject}</p>
-            <p>
-                Email:{" "}
-                <a href={`mailto:${email}`}>
-                    {email}
-                </a>
-            </p>
+                        <select
+                            id="contact-subject"
+                            value={subject}
+                            onChange={(event) => {
+                                setSubject(
+                                    event.target.value as Subject
+                                );
+                                clearFeedback();
+                            }}
+                        >
+                            <option value="general">
+                                General question
+                            </option>
 
-            <p>
-                <a
-                    href={githubUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    GitHub
-                </a>
-            </p>
+                            <option value="job">
+                                Job opportunity
+                            </option>
+
+                            <option value="project">
+                                Project collaboration
+                            </option>
+                        </select>
+                    </div>
+
+                    <div className="contact-form__field">
+                        <label htmlFor="contact-message">
+                            Your message
+                        </label>
+
+                        <textarea
+                            id="contact-message"
+                            value={message}
+                            placeholder="Tell me what you have in mind..."
+                            rows={6}
+                            maxLength={200}
+                            minLength={10}
+                            required
+                            aria-describedby="contact-message-count"
+                            onChange={(event) => {
+                                setMessage(event.target.value);
+                                clearFeedback();
+                            }}
+                        />
+
+                        <div
+                            id="contact-message-count"
+                            className="contact-form__counter"
+                        >
+                            {message.length} / 200 characters
+                        </div>
+                    </div>
+
+                    <button
+                        type="submit"
+                        className="contact-form__submit"
+                    >
+                        Prepare email
+                        <span aria-hidden="true"> ↗</span>
+                    </button>
+
+                    <p className="contact-form__disclaimer">
+                        This form prepares an email draft.
+                        It does not automatically send messages.
+                    </p>
+                </form>
+
+                {formStatus === "error" && (
+                    <div
+                        className="contact-form__feedback is-error"
+                        role="alert"
+                    >
+                        {formMessage}
+                    </div>
+                )}
+
+                {formStatus === "ready" && draftUrl && (
+                    <div
+                        className="contact-form__feedback is-ready"
+                        role="status"
+                    >
+                        <p>{formMessage}</p>
+
+                        <a
+                            href={draftUrl}
+                            className="contact-form__draft-link"
+                        >
+                            Open email app ↗
+                        </a>
+                    </div>
+                )}
+            </div>
         </section>
     );
 }

@@ -15,9 +15,9 @@ function LoginForm({ onSuccess }: LoginFormProps) {
     const [password, setPassword] = useState("");
 
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] =
+        useState<string | null>(null);
 
-    // Чи сервер відхилив саме облікові дані?
     const invalidCredentials =
         error === "Неправильна пошта або пароль";
 
@@ -49,80 +49,103 @@ function LoginForm({ onSuccess }: LoginFormProps) {
 
     return (
         <form
+            className="auth-form"
             onSubmit={handleSubmit}
             aria-busy={loading}
         >
-            <h2>Вхід в акаунт</h2>
+            <div className="auth-card__heading">
+                <span className="auth-eyebrow">
+                    ACCOUNT ACCESS
+                </span>
 
-            <div>
+                <h2>
+                    Welcome back<span>.</span>
+                </h2>
+
+                <p>
+                    Увійдіть, щоб продовжити роботу
+                    зі своїми завданнями.
+                </p>
+            </div>
+
+            <div className="auth-form__field">
                 <label htmlFor="login-email">
-                    Email
+                    Email address
                 </label>
 
                 <input
                     id="login-email"
                     type="email"
                     value={email}
-                    onChange={(event) => {
-                        setEmail(event.target.value);
-                        setError(null);
-                    }}
                     autoComplete="username"
                     placeholder="you@example.com"
+                    required
+                    disabled={loading}
                     aria-invalid={invalidCredentials}
                     aria-describedby={
                         invalidCredentials
                             ? "login-error"
                             : undefined
                     }
-                    disabled={loading}
-                    required
+                    onChange={(event) => {
+                        setEmail(event.target.value);
+                        setError(null);
+                    }}
                 />
             </div>
 
-            <div>
+            <div className="auth-form__field">
                 <label htmlFor="login-password">
-                    Пароль
+                    Password
                 </label>
 
                 <input
                     id="login-password"
                     type="password"
                     value={password}
-                    onChange={(event) => {
-                        setPassword(event.target.value);
-                        setError(null);
-                    }}
                     autoComplete="current-password"
                     placeholder="Введіть пароль"
+                    required
+                    disabled={loading}
                     aria-invalid={invalidCredentials}
                     aria-describedby={
                         invalidCredentials
                             ? "login-error"
                             : undefined
                     }
-                    disabled={loading}
-                    required
+                    onChange={(event) => {
+                        setPassword(event.target.value);
+                        setError(null);
+                    }}
                 />
             </div>
 
             {error && (
-                <p id="login-error" role="alert">
+                <div
+                    id="login-error"
+                    className="auth-feedback auth-feedback--error"
+                    role="alert"
+                >
                     {error}
-                </p>
+                </div>
             )}
 
             {loading && (
-                <p role="status">
+                <p
+                    className="auth-form__loading"
+                    role="status"
+                >
                     Перевіряємо облікові дані...
                 </p>
             )}
 
             <button
                 type="submit"
+                className="auth-button auth-button--primary"
                 disabled={loading}
             >
                 {loading ? "Входимо..." : "Увійти"}
+                <span aria-hidden="true">→</span>
             </button>
         </form>
     );

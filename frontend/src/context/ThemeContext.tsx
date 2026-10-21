@@ -25,7 +25,7 @@ export function ThemeProvider({
     children
 }: ThemeProviderProps) {
     const [theme, setTheme] =
-        useLocalStorage<Theme>("theme", "light");
+        useLocalStorage<Theme>("theme", "dark");
 
     function toggleTheme() {
         setTheme((currentTheme) =>

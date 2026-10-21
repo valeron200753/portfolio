@@ -1,34 +1,74 @@
+
 import { projects } from "../data/projects";
-import { useState, useMemo, useCallback } from "react";
-import StatsButton from "./StatsButton";
 
 function ProjectStats() {
-    const [count, setCount] = useState(0);
-
     const totalProjects = projects.length;
 
-    const completedProjects = useMemo(() => {
-        console.log("Calculating completed projects...");
+    const completedProjects = projects.filter(
+        (project) => project.completed
+    ).length;
 
-        return projects.filter(
-            (project) => project.completed
-        ).length;
-    }, []);
-    const handleHello = useCallback(() => {
-        console.log("Hello from ProjectStats!");
-    }, []);
+    const activeProjects =
+        totalProjects - completedProjects;
+
+    const statistics = [
+        {
+            number: totalProjects,
+            label: "Total Projects",
+            description: "Projects in the collection"
+        },
+        {
+            number: completedProjects,
+            label: "Completed",
+            description: "Marked as finished"
+        },
+        {
+            number: activeProjects,
+            label: "In Progress",
+            description: "Currently in development"
+        }
+    ];
+
     return (
-        <section>
-            <h2>Project Statistics</h2>
+        <section
+            className="project-statistics"
+            aria-labelledby="project-statistics-title"
+        >
+            <div className="project-statistics__heading">
+                <span className="project-statistics__eyebrow">
+                    DEVELOPMENT JOURNEY
+                </span>
 
-            <p>Total projects: {totalProjects}</p>
-            <p>Completed projects: {completedProjects}</p>
-            <p>Counter: {count}</p>
+                <h2 id="project-statistics-title">
+                    Work in <span>numbers.</span>
+                </h2>
 
-            <button onClick={() => setCount(count + 1)}>
-                Re-render component
-            </button>
-            <StatsButton onClick={handleHello} />
+                <p>
+                    A quick overview of the projects
+                    in my portfolio.
+                </p>
+            </div>
+
+            <dl className="project-statistics__grid">
+                {statistics.map((statistic) => (
+                    <div
+                        key={statistic.label}
+                        className="project-statistics__card"
+                    >
+                        <dd className="project-statistics__value">
+                            {String(statistic.number).padStart(2, "0")}
+                        </dd>
+
+                        <dt className="project-statistics__label">
+                            {statistic.label}
+                        </dt>
+
+                        <p className="project-statistics__description">
+                            {statistic.description}
+                        </p>
+                    </div>
+                ))}
+            </dl>
         </section>
     );
 }

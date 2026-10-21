@@ -7,14 +7,19 @@ type RegisterFormProps = {
     onRegistered: () => void;
 };
 
-function RegisterForm({ onRegistered }: RegisterFormProps) {
+function RegisterForm({
+    onRegistered
+}: RegisterFormProps) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] =
+        useState<string | null>(null);
 
-    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    async function handleSubmit(
+        event: FormEvent<HTMLFormElement>
+    ) {
         event.preventDefault();
 
         if (loading) return;
@@ -39,58 +44,104 @@ function RegisterForm({ onRegistered }: RegisterFormProps) {
     }
 
     return (
-        <form onSubmit={handleSubmit}>
-            <h2>Створити акаунт</h2>
+        <form
+            className="auth-form"
+            onSubmit={handleSubmit}
+            aria-busy={loading}
+        >
+            <div className="auth-card__heading">
+                <span className="auth-eyebrow">
+                    NEW ACCOUNT
+                </span>
 
-            <div>
+                <h2>
+                    Create account<span>.</span>
+                </h2>
+
+                <p>
+                    Зареєструйтеся, щоб отримати
+                    власний простір для завдань.
+                </p>
+            </div>
+
+            <div className="auth-form__field">
                 <label htmlFor="register-email">
-                    Email
+                    Email address
                 </label>
 
                 <input
                     id="register-email"
                     type="email"
                     value={email}
-                    onChange={(event) =>
-                        setEmail(event.target.value)
-                    }
-                    placeholder="you@example.com"
                     autoComplete="email"
+                    placeholder="you@example.com"
                     required
+                    disabled={loading}
+                    onChange={(event) => {
+                        setEmail(event.target.value);
+                        setError(null);
+                    }}
                 />
             </div>
 
-            <div>
+            <div className="auth-form__field">
                 <label htmlFor="register-password">
-                    Пароль
+                    Password
                 </label>
 
                 <input
                     id="register-password"
                     type="password"
                     value={password}
-                    onChange={(event) =>
-                        setPassword(event.target.value)
-                    }
                     minLength={15}
                     maxLength={128}
                     autoComplete="new-password"
+                    placeholder="Створіть пароль"
+                    aria-describedby="register-password-hint"
                     required
+                    disabled={loading}
+                    onChange={(event) => {
+                        setPassword(event.target.value);
+                        setError(null);
+                    }}
                 />
-                <p>Від 15 до 128 символів.</p>
+
+                <p
+                    id="register-password-hint"
+                    className="auth-form__hint"
+                >
+                    Використовуйте пароль від 15 до 128 символів.
+                </p>
             </div>
 
             {error && (
-                <p role="alert">{error}</p>
+                <div
+                    className="auth-feedback auth-feedback--error"
+                    role="alert"
+                >
+                    {error}
+                </div>
+            )}
+
+            {loading && (
+                <p
+                    className="auth-form__loading"
+                    role="status"
+                >
+                    Створюємо акаунт...
+                </p>
             )}
 
             <button
                 type="submit"
+                className="auth-button auth-button--primary"
                 disabled={loading}
             >
                 {loading
                     ? "Реєструємо..."
                     : "Зареєструватися"}
+
+                <span aria-hidden="true">→</span>
             </button>
         </form>
     );

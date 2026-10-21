@@ -1,8 +1,10 @@
+
 import Hero from "../components/Hero";
 import About from "../components/About";
 import Skills from "../components/Skills";
 import GitHubProfile from "../components/GitHubProfile";
-import ReducerCounter from "../components/ReducerCounter";
+
+import "../styles/home-sections.css";
 
 function Home() {
     return (
@@ -10,18 +12,16 @@ function Home() {
             <Hero
                 name="Tokyo"
                 role="Junior Full-Stack Developer"
-                description="I build web applications and learn modern full-stack development."
+                description="I build practical web applications with React, TypeScript and Node.js — from responsive interfaces to backend APIs."
             />
 
             <About
-                information="I'm learning full-stack development and building web applications with React, TypeScript and Node.js."
+                information="I'm a software engineering graduate building my skills through hands-on full-stack projects. I work with frontend interfaces, backend APIs, databases, authentication and automated testing."
             />
 
             <Skills />
 
             <GitHubProfile />
-
-            <ReducerCounter />
         </main>
     );
 }

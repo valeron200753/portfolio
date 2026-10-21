@@ -1,49 +1,80 @@
 
 import { NavLink } from "react-router-dom";
+
 import ThemeToggle from "./ThemeToggle";
+import "./Header.css";
 
 function Header() {
+    const navClass = ({ isActive }: { isActive: boolean }) =>
+        `site-nav__link${isActive ? " is-active" : ""}`;
+
     return (
-        <header>
-            <nav>
-                <ThemeToggle />
+        <header className="site-header">
+            <div className="site-header__inner">
 
                 <NavLink
                     to="/"
-                    className={({ isActive }) =>
-                        isActive ? "active" : ""
-                    }
+                    className="site-header__brand"
+                    aria-label="TOKYO.DEV — головна сторінка"
                 >
-                    Home
+                    <span
+                        className="site-header__brand-icon"
+                        aria-hidden="true"
+                    >
+                        T.
+                    </span>
+
+                    <span className="site-header__brand-name">
+                        TOKYO<span>.DEV</span>
+                    </span>
                 </NavLink>
 
-                <NavLink
-                    to="/projects"
-                    className={({ isActive }) =>
-                        isActive ? "active" : ""
-                    }
+                <nav
+                    className="site-nav"
+                    aria-label="Основна навігація"
                 >
-                    Projects
-                </NavLink>
+                    <NavLink
+                        to="/"
+                        end
+                        className={navClass}
+                    >
+                        Home
+                    </NavLink>
 
-                <NavLink
-                    to="/contact"
-                    className={({ isActive }) =>
-                        isActive ? "active" : ""
-                    }
-                >
-                    Contact
-                </NavLink>
+                    <NavLink
+                        to="/projects"
+                        className={navClass}
+                    >
+                        Projects
+                    </NavLink>
 
-                <NavLink
-                    to="/tasks"
-                    className={({ isActive }) =>
-                        isActive ? "active" : ""
-                    }
-                >
-                    Tasks
-                </NavLink>
-            </nav>
+                    <NavLink
+                        to="/tasks"
+                        className={navClass}
+                    >
+                        Tasks
+                    </NavLink>
+
+                    <NavLink
+                        to="/contact"
+                        className={navClass}
+                    >
+                        Contact
+                    </NavLink>
+
+                    <NavLink
+                        to="/account"
+                        className={navClass}
+                    >
+                        Account
+                    </NavLink>
+                </nav>
+
+                <div className="site-header__actions">
+                    <ThemeToggle />
+                </div>
+
+            </div>
         </header>
     );
 }

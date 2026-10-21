@@ -4,6 +4,7 @@ export interface Project {
     technology: string;
     completed: boolean;
     description: string;
+    demoPath?: string;
 }
 
 export const projects: Project[] = [
@@ -19,7 +20,8 @@ export const projects: Project[] = [
         title: "Task Manager",
         technology: "React",
         completed: true,
-        description: "A simple task management application."
+        description: "A simple task management application.",
+        demoPath: "/tasks"
     },
     {
         id: 3,

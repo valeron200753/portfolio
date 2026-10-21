@@ -13,3 +13,16 @@ backend/*.db*
 *.sqlite-*
 *.sqlite3
 *.sqlite3-*
+# Build output
+dist/
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Vite cache
+.vite/

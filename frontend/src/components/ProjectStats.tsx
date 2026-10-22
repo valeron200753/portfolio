@@ -5,11 +5,16 @@ function ProjectStats() {
     const totalProjects = projects.length;
 
     const completedProjects = projects.filter(
-        (project) => project.completed
+        (project) => project.status === "completed"
     ).length;
 
-    const activeProjects =
-        totalProjects - completedProjects;
+    const activeProjects = projects.filter(
+        (project) => project.status === "in-progress"
+    ).length;
+
+    const plannedProjects = projects.filter(
+        (project) => project.status === "planned"
+    ).length;
 
     const statistics = [
         {
@@ -20,12 +25,17 @@ function ProjectStats() {
         {
             number: completedProjects,
             label: "Completed",
-            description: "Marked as finished"
+            description: "Finished project milestones"
         },
         {
             number: activeProjects,
             label: "In Progress",
             description: "Currently in development"
+        },
+        {
+            number: plannedProjects,
+            label: "Planned",
+            description: "Not started yet"
         }
     ];
 
@@ -55,13 +65,16 @@ function ProjectStats() {
                         key={statistic.label}
                         className="project-statistics__card"
                     >
-                        <dd className="project-statistics__value">
-                            {String(statistic.number).padStart(2, "0")}
-                        </dd>
-
                         <dt className="project-statistics__label">
                             {statistic.label}
                         </dt>
+
+                        <dd className="project-statistics__value">
+                            {String(statistic.number).padStart(
+                                2,
+                                "0"
+                            )}
+                        </dd>
 
                         <p className="project-statistics__description">
                             {statistic.description}

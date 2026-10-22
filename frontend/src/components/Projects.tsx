@@ -5,7 +5,12 @@ import {
     useSearchParams
 } from "react-router-dom";
 
-import { projects } from "../data/projects";
+import {
+    projects,
+    projectStatusLabels,
+    projectStatusClasses,
+    type ProjectStatus
+} from "../data/projects";
 
 const technologies = [
     ...new Set(
@@ -21,7 +26,12 @@ function Projects() {
     const technology = searchParams.get("technology");
     const search = searchParams.get("search") ?? "";
 
-    const completedOnly = status === "completed";
+    const selectedStatus: ProjectStatus | null =
+        status === "planned" ||
+            status === "in-progress" ||
+            status === "completed"
+            ? status
+            : null;
 
     const hasFilters = Boolean(
         status || technology || search
@@ -49,19 +59,21 @@ function Projects() {
         );
     }
 
-    function toggleCompletedProjects() {
+
+    function toggleStatus(nextStatus: ProjectStatus) {
         setSearchParams((current) => {
             const next = new URLSearchParams(current);
 
-            if (next.get("status") === "completed") {
+            if (next.get("status") === nextStatus) {
                 next.delete("status");
             } else {
-                next.set("status", "completed");
+                next.set("status", nextStatus);
             }
 
             return next;
         });
     }
+
 
     const visibleProjects = useMemo(() => {
         const normalizedSearch =
@@ -69,7 +81,8 @@ function Projects() {
 
         return projects.filter((project) => {
             const matchesStatus =
-                !completedOnly || project.completed;
+                !selectedStatus ||
+                project.status === selectedStatus;
 
             const matchesTechnology =
                 !technology ||
@@ -90,7 +103,7 @@ function Projects() {
                 matchesSearch
             );
         });
-    }, [completedOnly, technology, search]);
+    }, [selectedStatus, technology, search]);
 
     return (
         <section
@@ -175,21 +188,32 @@ function Projects() {
 
                 <div className="project-filters__footer">
                     <div className="project-filters__actions">
-                        <button
-                            type="button"
-                            className={
-                                `project-filters__toggle ${
-                                    completedOnly
-                                        ? "is-active"
-                                        : ""
-                                }`
-                            }
-                            aria-pressed={completedOnly}
-                            onClick={toggleCompletedProjects}
-                        >
-                            <span aria-hidden="true">✓</span>
-                            Completed only
-                        </button>
+
+                        {(
+                            ["completed", "in-progress", "planned"] as const
+                        ).map((item) => (
+                            <button
+                                key={item}
+                                type="button"
+                                className={`project-filters__toggle ${selectedStatus === item
+                                    ? "is-active"
+                                    : ""
+                                    }`}
+                                aria-pressed={selectedStatus === item}
+                                onClick={() => toggleStatus(item)}
+                            >
+                                <span aria-hidden="true">
+                                    {item === "completed"
+                                        ? "✓"
+                                        : item === "in-progress"
+                                            ? "◷"
+                                            : "○"}
+                                </span>
+
+                                {projectStatusLabels[item]}
+                            </button>
+                        ))}
+
 
                         <button
                             type="button"
@@ -263,21 +287,16 @@ function Projects() {
                                         {project.technology}
                                     </span>
 
+
                                     <span
-                                        className={
-                                            `project-card__status ${
-                                                project.completed
-                                                    ? "is-completed"
-                                                    : "is-progress"
-                                            }`
-                                        }
+                                        className={`project-card__status ${projectStatusClasses[project.status]
+                                            }`}
                                     >
                                         <span aria-hidden="true" />
 
-                                        {project.completed
-                                            ? "Completed"
-                                            : "In progress"}
+                                        {projectStatusLabels[project.status]}
                                     </span>
+
                                 </div>
 
                                 <h3>{project.title}</h3>

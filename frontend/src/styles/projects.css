@@ -823,3 +823,51 @@
         transform: none;
     }
 }
+
+
+/* =====================================
+   PROJECT STATUS — PLANNED
+   ===================================== */
+
+.project-card__status.is-planned,
+.project-detail__status.is-planned {
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border-color: var(--border-primary);
+}
+
+.project-card__status.is-planned > span,
+.project-detail__status.is-planned > span {
+    background: var(--text-secondary);
+}
+
+/* Allow multiple status filters */
+
+.project-filters__actions {
+    flex-wrap: wrap;
+}
+
+/* Four statistics cards */
+
+.project-statistics__grid {
+    grid-template-columns: repeat(
+        4,
+        minmax(0, 1fr)
+    );
+}
+
+@media (max-width: 900px) {
+    .project-statistics__grid {
+        grid-template-columns: repeat(
+            2,
+            minmax(0, 1fr)
+        );
+    }
+}
+
+@media (max-width: 520px) {
+    .project-statistics__grid {
+        grid-template-columns: 1fr;
+    }
+}
+

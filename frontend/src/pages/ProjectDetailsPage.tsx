@@ -1,7 +1,11 @@
 
 import { Link, useParams } from "react-router-dom";
 
-import { projects } from "../data/projects";
+import {
+    projects,
+    projectStatusLabels,
+    projectStatusClasses
+} from "../data/projects";
 import "../styles/projects.css";
 
 function ProjectDetailsPage() {
@@ -69,20 +73,16 @@ function ProjectDetailsPage() {
                         {project.technology}
                     </span>
 
+
                     <span
-                        className={
-                            `project-detail__status ${
-                                project.completed
-                                    ? "is-completed"
-                                    : "is-progress"
-                            }`
-                        }
+                        className={`project-detail__status ${projectStatusClasses[project.status]
+                            }`}
                     >
                         <span aria-hidden="true" />
-                        {project.completed
-                            ? "Completed"
-                            : "In progress"}
+
+                        {projectStatusLabels[project.status]}
                     </span>
+
                 </div>
             </header>
 
@@ -99,7 +99,10 @@ function ProjectDetailsPage() {
                 </span>
 
                 <span className="project-detail__preview-footer">
-                    SOFTWARE DEVELOPMENT
+                    {project.status === "planned"
+                        ? "PLANNED PROJECT"
+                        : "SOFTWARE DEVELOPMENT"}
+
                     <span aria-hidden="true">↗</span>
                 </span>
             </div>
@@ -143,11 +146,7 @@ function ProjectDetailsPage() {
 
                         <div>
                             <dt>Status</dt>
-                            <dd>
-                                {project.completed
-                                    ? "Completed"
-                                    : "In progress"}
-                            </dd>
+                            <dd>{projectStatusLabels[project.status]}</dd>
                         </div>
 
                         <div>

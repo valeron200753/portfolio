@@ -46,8 +46,7 @@ export const projects: Project[] = [
         technology: "React + TypeScript, Express, SQLite",
         status: "completed",
         description:
-            "A full-stack task management application with session-based authentication, personal task creation, completion tracking, deletion, search, status filters, and progress statistics.",
-        demoPath: "/tasks"
+            "A full-stack task management application with session-based authentication, personal task creation, completion tracking, deletion, search, status filters, and progress statistics."
     },
     {
         id: 3,

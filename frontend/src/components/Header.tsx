@@ -5,7 +5,11 @@ import ThemeToggle from "./ThemeToggle";
 import "./Header.css";
 
 function Header() {
-    const navClass = ({ isActive }: { isActive: boolean }) =>
+    const navClass = ({
+        isActive
+    }: {
+        isActive: boolean;
+    }) =>
         `site-nav__link${isActive ? " is-active" : ""}`;
 
     return (
@@ -15,7 +19,7 @@ function Header() {
                 <NavLink
                     to="/"
                     className="site-header__brand"
-                    aria-label="TOKYO.DEV — головна сторінка"
+                    aria-label="TOKYO.DEV — Home"
                 >
                     <span
                         className="site-header__brand-icon"
@@ -31,7 +35,7 @@ function Header() {
 
                 <nav
                     className="site-nav"
-                    aria-label="Основна навігація"
+                    aria-label="Main navigation"
                 >
                     <NavLink
                         to="/"
@@ -49,31 +53,16 @@ function Header() {
                     </NavLink>
 
                     <NavLink
-                        to="/tasks"
-                        className={navClass}
-                    >
-                        Tasks
-                    </NavLink>
-
-                    <NavLink
                         to="/contact"
                         className={navClass}
                     >
                         Contact
-                    </NavLink>
-
-                    <NavLink
-                        to="/account"
-                        className={navClass}
-                    >
-                        Account
                     </NavLink>
                 </nav>
 
                 <div className="site-header__actions">
                     <ThemeToggle />
                 </div>
-
             </div>
         </header>
     );

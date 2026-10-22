@@ -1,56 +1,38 @@
+# TOKYO.DEV — Developer Portfolio
 
-# TOKYO.DEV — Full-Stack Portfolio
+A modern, responsive developer portfolio built with React and TypeScript.
 
-A personal developer portfolio and full-stack learning project,
-built with React, TypeScript, Node.js, Express and SQLite.
-
-The project combines a developer portfolio with an authenticated
-task management application.
+Created during a 30-day Full-Stack development marathon and continuously improved as my skills and projects grow.
 
 ## Overview
 
-This repository contains two connected applications:
+TOKYO.DEV is my personal website showcasing my technical skills, software projects, and development journey.
 
-- **Frontend:** a responsive React portfolio and Task Manager.
-- **Backend:** an Express REST API with authentication and SQLite storage.
-
-It was developed during a 30-day hands-on full-stack learning
-marathon and continues to evolve.
+The portfolio is a standalone frontend application. Full-stack applications are maintained in separate repositories.
 
 ## Features
 
-### Portfolio
-
-- Responsive Dark Forest visual design
+- Responsive Dark Forest design
 - Light and dark themes
-- Home, Projects, Contact and Account pages
+- Home, Projects, and Contact pages
 - Project search and filtering
+- Project status tracking: Planned, In Progress, Completed
 - Individual project detail pages
 - GitHub profile integration
-- Contact form that prepares an email draft
-
-### Task Manager
-
-- Account registration and login
-- Session-based authentication
-- Create, view, update and delete personal tasks
-- Search and filter tasks by status
-- Task statistics and completion progress
-- Loading, error and retry states
-- Protection against duplicate requests
-- Separation of tasks between users
+- Contact form using an email draft
+- Client-side navigation with React Router
+- Automated project data tests
 
 ## Technology Stack
 
-| Layer | Technologies |
+| Category | Technologies |
 | --- | --- |
-| Frontend | React, TypeScript, Vite, React Router |
-| Styling | CSS3, Responsive Design, CSS Variables |
-| Backend | Node.js, Express |
-| Database | SQLite |
-| Testing | Node Test Runner, Vitest, React Testing Library |
-| Security | HTTP-only cookies, CSRF Origin checks, Helmet, Rate Limiting |
-| Tools | Git, GitHub, Linux |
+| Frontend | React, TypeScript |
+| Build Tool | Vite |
+| Routing | React Router |
+| Styling | CSS3, CSS Variables, Responsive Design |
+| Testing | Vitest |
+| Development | Git, GitHub, Linux |
 
 ## Project Structure
 
@@ -59,215 +41,108 @@ portfolio/
 ├── frontend/
 │   ├── public/
 │   ├── src/
-│   │   ├── api/
+│   │   ├── assets/
 │   │   ├── components/
 │   │   ├── context/
 │   │   ├── data/
 │   │   ├── pages/
 │   │   ├── styles/
-│   │   └── types/
-│   └── package.json
-│
-├── backend/
-│   ├── controllers/
-│   ├── middleware/
-│   ├── routes/
-│   ├── services/
-│   ├── scripts/
-│   ├── tests/
-│   ├── database.js
-│   ├── server.js
-│   └── package.json
-│
+│   │   └── test/
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.ts
+├── .gitignore
 └── README.md
 ```
 
-## Requirements
+## Getting Started
 
-- Node.js with support for `node:sqlite`
+### Requirements
+
+- Node.js 24 or newer
 - npm
 - Git
 
-Node.js 24 or newer is recommended for this project.
-
-## Getting Started
+### Installation
 
 Clone the repository:
 
 ```bash
 git clone https://github.com/valeron200753/portfolio.git
-cd portfolio
+cd portfolio/frontend
+npm ci
 ```
 
-### 1. Start the Backend
-
-Open a terminal:
+Start the development server:
 
 ```bash
-cd backend
-npm ci
-npm start
-```
-
-The API runs at:
-
-```text
-http://localhost:3001
-```
-
-By default, SQLite data is stored locally in
-`backend/tasks.db`.
-
-The production database location can be configured with
-the `TASKS_DB_PATH` environment variable.
-
-### 2. Start the Frontend
-
-Open another terminal:
-
-```bash
-cd frontend
-npm ci
 npm run dev
 ```
 
-Open:
+Open http://localhost:5173 in your browser.
 
-```text
-http://localhost:5173
+### Production Build
+
+```bash
+npm run build
+npm run preview
 ```
 
-During local development, Vite proxies requests from
-`/api` to the Express Backend.
+### Testing and Linting
 
-Both servers need to be running for authenticated
-Task Manager features to work.
+```bash
+npm test
+npm run lint
+```
 
-## Environment Configuration
+## Contact Configuration
 
-The Backend includes `.env.example` documenting
-production configuration variables.
+The contact form supports an optional public email address.
 
-Relevant variables include:
-
-| Variable | Purpose |
-| --- | --- |
-| NODE_ENV | Application environment |
-| PORT | Express server port |
-| FRONTEND_ORIGINS | Allowed browser origins for unsafe API requests |
-| TASKS_DB_PATH | SQLite database path |
-
-Production configuration must use a real HTTPS frontend
-origin and persistent database storage.
-
-The frontend optionally supports:
+Create `frontend/.env.local`:
 
 ```dotenv
 VITE_CONTACT_EMAIL=your-public-email@example.com
 ```
 
-Set this in `frontend/.env.local`, replacing the example
-with a public contact address.
+Replace the example with your public contact email address.
 
-`VITE_` variables are included in the client-side
-application and must not contain secrets.
+The contact form uses `mailto:` to prepare an email draft. It does not send messages automatically.
 
-The contact form uses `mailto:`. It prepares an email
-draft but does not send messages automatically.
+All `VITE_` environment variables are exposed to the client and must not contain secrets.
 
-## API Overview
+## Featured Projects
 
-Authentication endpoints:
+### Task Manager
 
-```text
-POST /api/auth/register
-POST /api/auth/login
-GET  /api/auth/me
-POST /api/auth/logout
-```
+An independent Full-Stack application with authentication, personal task management, search, filters, and progress tracking.
 
-Task endpoints:
+**Stack:** React, TypeScript, Express, SQLite.
 
-```text
-GET    /api/tasks
-POST   /api/tasks
-PATCH  /api/tasks/:id
-DELETE /api/tasks/:id
-```
+[Task Manager Repository](https://github.com/valeron200753/task-manager)
 
-Task operations require authentication. Users can only
-access tasks belonging to their own accounts.
+### Weather App
 
-## Testing
+A planned weather application. Development has not started yet.
 
-### Backend
+### Portfolio
 
-```bash
-cd backend
-npm test
-```
+This website itself — currently in active development.
 
-### Frontend
+## Learning Lab
 
-```bash
-cd frontend
-npm test
-```
+Coding exercises and experiments from my learning journey are maintained separately.
 
-### Production Build
+[Learning Lab Repository](https://github.com/valeron200753/learning-lab)
 
-```bash
-cd frontend
-npm run build
-```
+## Deployment
 
-### Linting
+The portfolio is designed for static hosting, without a dedicated backend server or database.
 
-```bash
-cd frontend
-npm run lint
-```
-
-## Security Notes
-
-The project includes:
-
-- Password hashing
-- Server-managed sessions
-- HTTP-only session cookies
-- SameSite cookie configuration
-- Origin checking for state-changing API requests
-- Authentication and ownership checks
-- Request rate limiting
-- Security headers using Helmet
-- Automated Backend and Frontend tests
-
-These measures provide a foundation, but public deployment
-requires additional environment-specific review.
-
-Before production deployment:
-
-- Enable HTTPS
-- Configure the reverse proxy correctly
-- Set trusted frontend origins
-- Use persistent storage for SQLite
-- Configure and test database backups
-- Review rate limiting for the deployment architecture
-- Verify cookie security and deployment configuration
-
-## Project Status
-
-**Active development**
-
-The application runs locally. The interface and
-documentation are being refined for portfolio use.
-
-A public deployment URL will be added after deployment
-and verification.
+Public deployment through Cloudflare Pages is planned.
 
 ## Developer
 
-**Tokyo** — Junior Full-Stack Developer
+**Tokyo — Full-Stack Developer**
 
-GitHub: https://github.com/valeron200753
-```
+[GitHub Profile](https://github.com/valeron200753)

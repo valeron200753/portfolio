@@ -135,11 +135,21 @@ Coding exercises and experiments from my learning journey are maintained separat
 
 [Learning Lab Repository](https://github.com/valeron200753/learning-lab)
 
-## Deployment
 
-The portfolio is designed for static hosting, without a dedicated backend server or database.
+## Live Website
 
-Public deployment through Cloudflare Pages is planned.
+**TOKYO.DEV is live!**
+
+[Visit Portfolio](https://tokyo-portfolio.pages.dev/)
+
+The website is hosted on Cloudflare Pages with HTTPS.
+
+Cloudflare automatically deploys new changes pushed
+to the main branch.
+
+GitHub Actions independently runs linting, tests,
+and production build checks.
+
 
 ## Developer
 

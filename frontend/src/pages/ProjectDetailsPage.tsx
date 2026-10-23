@@ -131,6 +131,19 @@ function ProjectDetailsPage() {
                             <span aria-hidden="true"> ↗</span>
                         </Link>
                     )}
+
+                    {project.repositoryUrl && (
+                        <a
+                            href={project.repositoryUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="project-detail__button"
+                        >
+                            View source on GitHub
+                            <span aria-hidden="true"> ↗</span>
+                        </a>
+                    )}
+
                 </section>
 
                 <aside className="project-detail__facts">

@@ -11,6 +11,7 @@ export interface Project {
     status: ProjectStatus;
     description: string;
     demoPath?: string;
+    repositoryUrl?: string;
 }
 
 export const projectStatusLabels: Record<
@@ -38,7 +39,9 @@ export const projects: Project[] = [
         technology: "React + TypeScript",
         status: "in-progress",
         description:
-            "An evolving personal developer portfolio with responsive design, project showcases, and light/dark themes."
+            "An evolving personal developer portfolio with responsive design, project showcases, and light/dark themes.",
+        // Portfolio
+        repositoryUrl: "https://github.com/valeron200753/portfolio"
     },
     {
         id: 2,
@@ -46,7 +49,9 @@ export const projects: Project[] = [
         technology: "React + TypeScript, Express, SQLite",
         status: "completed",
         description:
-            "A full-stack task management application with session-based authentication, personal task creation, completion tracking, deletion, search, status filters, and progress statistics."
+            "A full-stack task management application with session-based authentication, personal task creation, completion tracking, deletion, search, status filters, and progress statistics.",
+        // Task Manager
+        repositoryUrl: "https://github.com/valeron200753/task-manager"
     },
     {
         id: 3,

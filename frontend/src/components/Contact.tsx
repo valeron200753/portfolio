@@ -7,6 +7,7 @@ type FormStatus = "idle" | "error" | "ready";
 interface ContactProps {
     email: string;
     githubUrl: string;
+    linkedinUrl?: string;
 }
 
 const subjectLabels: Record<Subject, string> = {
@@ -15,7 +16,11 @@ const subjectLabels: Record<Subject, string> = {
     project: "Project collaboration"
 };
 
-function Contact({ email, githubUrl }: ContactProps) {
+function Contact({
+    email,
+    githubUrl,
+    linkedinUrl
+}: ContactProps) {
     const [name, setName] = useState("");
     const [formEmail, setFormEmail] = useState("");
     const [subject, setSubject] =
@@ -161,6 +166,34 @@ function Contact({ email, githubUrl }: ContactProps) {
                         )}
                     </div>
                 </div>
+
+                {linkedinUrl?.trim() && (
+                    <div className="contact-method">
+                        <div
+                            className="contact-method__icon"
+                            aria-hidden="true"
+                        >
+                            in
+                        </div>
+
+                        <div>
+                            <span className="contact-method__label">
+                                LINKEDIN
+                            </span>
+
+                            <h3>Professional network</h3>
+
+                            <a
+                                href={linkedinUrl.trim()}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                View LinkedIn profile
+                                <span aria-hidden="true"> ↗</span>
+                            </a>
+                        </div>
+                    </div>
+                )}
 
                 <div className="contact-method">
                     <div

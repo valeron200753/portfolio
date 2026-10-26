@@ -474,3 +474,12 @@
         transform: none;
     }
 }
+
+
+/* Keep the Hero decoration inside the viewport
+   on tablets and mobile devices. */
+@media (max-width: 1024px) {
+    .portfolio-hero::before {
+        right: 0;
+    }
+}

@@ -91,13 +91,6 @@ function About({ information }: AboutProps) {
                                 <h3>{area.title}</h3>
                                 <p>{area.description}</p>
                             </div>
-
-                            <span
-                                className="about-focus-card__symbol"
-                                aria-hidden="true"
-                            >
-                                ↗
-                            </span>
                         </article>
                     ))}
                 </div>

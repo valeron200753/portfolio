@@ -88,13 +88,6 @@ function Skills() {
                             <span className="skill-card__number">
                                 {group.number}
                             </span>
-
-                            <span
-                                className="skill-card__symbol"
-                                aria-hidden="true"
-                            >
-                                ↗
-                            </span>
                         </div>
 
                         <h3>{group.title}</h3>

@@ -25,10 +25,13 @@ function ContactPage() {
                 </p>
             </header>
 
+
             <Contact
                 email={publicContactEmail}
                 githubUrl="https://github.com/valeron200753"
+                linkedinUrl="https://www.linkedin.com/in/valerii-ivanichev-0b8206351/"
             />
+
         </main>
     );
 }

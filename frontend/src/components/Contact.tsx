@@ -128,9 +128,9 @@ function Contact({ email, githubUrl }: ContactProps) {
                     </h2>
 
                     <p>
-                        Whether it's a job opportunity,
-                        collaboration or a question about my
-                        projects, feel free to reach out.
+                        If you'd like to discuss a job opportunity,
+                        collaborate on a project, or ask a question
+                        about my work, I'd be happy to hear from you.
                     </p>
                 </div>
 
